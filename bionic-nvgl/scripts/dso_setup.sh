@@ -31,5 +31,5 @@ make -j4
 cd /work
 chmod -R a+rw ./
 
-echo -e "\ndso build finished !!"
+echo "[Complete!!!]"
 

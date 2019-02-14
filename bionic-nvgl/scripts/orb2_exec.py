@@ -6,7 +6,7 @@ import glob
 
 ORB2_ROOT = "/work/ORB_SLAM2"
 VOCABULARY = ORB2_ROOT + "/Vocabulary/ORBvoc.txt"
-DATA_ROOT = "/work/dataset"
+DATA_ROOT = "/data"
 OUTPUT_ROOT = "/work/output"
 TEST_NUM = 5
 

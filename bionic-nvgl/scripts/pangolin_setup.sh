@@ -23,3 +23,5 @@ make install
 cd /work
 chmod -R a+rw ./
 
+echo "[Complete!!!]"
+

@@ -6,7 +6,7 @@ import glob
 import time
 
 EXECUTER = "/work/dso/build/bin/dso_dataset"
-DATA_ROOT = "/work/dataset"
+DATA_ROOT = "/data"
 OUTPUT_ROOT = "/work/output"
 TEST_NUM = 5
 

@@ -17,3 +17,12 @@ catkin_init_workspace
 cd ..
 catkin_make
 
+echo "[Set the ROS evironment]"
+sh -c "echo \"source $WORKDIR/$name_catkin_workspace/devel/setup.bash\" >> ~/.bashrc"
+
+sh -c "echo \"export ROS_MASTER_URI=http://localhost:11311\" >> ~/.bashrc"
+sh -c "echo \"export ROS_HOSTNAME=localhost\" >> ~/.bashrc"
+sh -c "echo \"export ROS_PACKAGE_PATH=$WORKDIR${ROS_PACKAGE_PATH:+:${ROS_PACKAGE_PATH}}\" >> ~/.bashrc"
+
+echo "[Complete!!!]"
+

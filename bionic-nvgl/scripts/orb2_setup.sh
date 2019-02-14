@@ -61,5 +61,5 @@ fi
 cd /work
 chmod -R a+rw ./
 
-echo -e "\nORB_SLAM2 build finished !!"
+echo "[Complete!!!]"
 

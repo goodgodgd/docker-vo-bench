@@ -17,7 +17,7 @@ RUN apt-get update \
 
 # xhost +local:docker
 # nvidia-docker run --name vo-bench -it --env="DISPLAY" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" -v "/home/ian/workspace/docker/bionic-nvgl:/work" -v "/media/ian/iandata/datasets:/work/data" bionic-nvgl:dev bash
-# nvidia-docker run --name vo-bench2 -it --env="DISPLAY" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" -v "/home/ian/workplace/docker-vo/bionic-nvgl:/work" bionic-nvgl:dev2 bash
+# nvidia-docker run --name vo-bench2 -it --env="DISPLAY" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" -v "/home/ian/workplace/docker-vo/bionic-nvgl:/work" -v "/home/ian/workplace/docker-vo/dataset:/data" bionic-nvgl:dev2 bash
 
 # --rm: remove container after exit
 

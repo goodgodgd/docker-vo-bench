@@ -46,9 +46,6 @@ fi
 
 echo ""
 echo "[Update the package lists and upgrade them]"
-# if there is "Hash sum mismatch error"
-# apt-get clean
-# rm -r /var/lib/apt/lists/*
 apt-get update
 apt-get upgrade -y
 
@@ -68,28 +65,7 @@ echo "[Environment setup and getting rosinstall]"
 source /opt/ros/$name_ros_version/setup.sh
 apt-get install -y python-rosinstall
 
-echo "[Make the catkin workspace and test the catkin_make]"
-mkdir -p $WORKDIR/$name_catkin_workspace/src
-cd $WORKDIR/$name_catkin_workspace/src
-catkin_init_workspace
-cd $WORKDIR/$name_catkin_workspace
-catkin_make
-
-echo "[Set the ROS evironment]"
-sh -c "echo \"alias eb='nano ~/.bashrc'\" >> ~/.bashrc"
-sh -c "echo \"alias sb='source ~/.bashrc'\" >> ~/.bashrc"
-sh -c "echo \"alias gs='git status'\" >> ~/.bashrc"
-sh -c "echo \"alias gp='git pull'\" >> ~/.bashrc"
-sh -c "echo \"alias cw='cd ~/$name_catkin_workspace'\" >> ~/.bashrc"
-sh -c "echo \"alias cs='cd ~/$name_catkin_workspace/src'\" >> ~/.bashrc"
-sh -c "echo \"alias cm='cd ~/$name_catkin_workspace && catkin_make'\" >> ~/.bashrc"
-
 sh -c "echo \"source /opt/ros/$name_ros_version/setup.bash\" >> ~/.bashrc"
-sh -c "echo \"source $WORKDIR/$name_catkin_workspace/devel/setup.bash\" >> ~/.bashrc"
-
-sh -c "echo \"export ROS_MASTER_URI=http://localhost:11311\" >> ~/.bashrc"
-sh -c "echo \"export ROS_HOSTNAME=localhost\" >> ~/.bashrc"
-sh -c "echo \"export ROS_PACKAGE_PATH=/work${ROS_PACKAGE_PATH:+:${ROS_PACKAGE_PATH}}\" >> ~/.bashrc"
 
 echo "[Complete!!!]"
 exit 0
