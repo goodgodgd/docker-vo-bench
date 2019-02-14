@@ -4,7 +4,8 @@ echo "========== apt upate =========="
 apt update
 
 echo "========== apt install =========="
-apt install -y libsuitesparse-dev libeigen3-dev libboost-all-dev
+apt install -y libsuitesparse-dev libeigen3-dev libboost-all-dev python3-pip
+pip3 install ruamel.yaml
 
 echo "========== install ziplib =========="
 
@@ -29,3 +30,6 @@ make -j4
 
 cd /work
 chmod -R a+rw ./
+
+echo -e "\ndso build finished !!"
+

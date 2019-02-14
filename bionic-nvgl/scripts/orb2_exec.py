@@ -5,8 +5,8 @@ import argparse
 import glob
 
 ORB2_ROOT = "/work/ORB_SLAM2"
-VOCABULARY = ORB2_ROOT + "/Vocabulary/ORBVoc.txt"
-DATA_ROOT = "/work/data/dataset"
+VOCABULARY = ORB2_ROOT + "/Vocabulary/ORBvoc.txt"
+DATA_ROOT = "/work/dataset"
 OUTPUT_ROOT = "/work/output"
 TEST_NUM = 5
 
@@ -51,7 +51,7 @@ def run_orb2(opt):
 def check_base_paths():
     assert op.isdir(ORB2_ROOT), "ORB SLAM2 dir doesn't exist"
     assert op.isfile(VOCABULARY), "Vocabulary file doesn't exist"
-    assert op.isdir(DATA_ROOT), "datset dir doesn't exist"
+    assert op.isdir(DATA_ROOT), "dataset dir doesn't exist"
     assert op.isdir(OUTPUT_ROOT), "output dir doesn't exist"
 
 

@@ -7,7 +7,7 @@ echo "[Note] Target ROS version >>> ROS Kinetic"
 echo ""
 
 echo "[Set the target OS, ROS version and name of catkin workspace]"
-name_os_version=${name_os_version:="xeniel"}
+name_os_version=${name_os_version:="xenial"}
 name_ros_version=${name_ros_version:="kinetic"}
 
 echo "[Update the package lists and upgrade them]"
