@@ -25,4 +25,3 @@ RUN apt-get update \
 # @reboot /bin/mount -t ntfs /dev/sdb1 /media/ian/iandata
 # @reboot /usr/bin/xhost +local:docker
 
-

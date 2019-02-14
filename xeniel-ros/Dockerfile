@@ -2,10 +2,10 @@ FROM nvidia/opengl:1.0-glvnd-devel-ubuntu16.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 COPY scripts/ros_kinetic_setup.sh /root
-RUN chmod a+x /root/ros_kinetic_setup.sh
 RUN apt-get update \
 	&& apt-get upgrade -y \
 	&& echo -e '\n========== install ros ==========' \
+	&& chmod a+x /root/ros_kinetic_setup.sh \
 	&& /root/ros_kinetic_setup.sh \
 	&& echo -e '\n========== install basic apps ==========' \
 	&& apt-get install -y build-essential gedit nano wget curl unzip cmake cmake-gui git mesa-utils \
