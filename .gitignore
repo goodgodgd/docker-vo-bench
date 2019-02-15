@@ -2,6 +2,8 @@ test
 ORBVoc.*
 igdata
 build
+devel
+logs
 lib
 bin
 config.h
@@ -10,6 +12,5 @@ output
 dataset
 .vscode
 .idea
-maplab
-maplab*
+.catkin_tools
 
