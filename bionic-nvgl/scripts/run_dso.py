@@ -108,8 +108,6 @@ def euroc_mav(opt):
     mode = "1"
     outname = "dso_efrt" if opt.preset == 0 else "dso_nort"
     sequences = [s + "mav0/cam0" for s in glob.glob(dataset_path + "/*/")]
-    sequences = [seq.replace("mav0/cam0", "cam0") if "MH_" in seq else seq
-                 for seq in sequences]
     if opt.seq_idx != -1:
         sequences = [sequences[opt.seq_idx]]
 

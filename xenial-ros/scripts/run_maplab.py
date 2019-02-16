@@ -6,8 +6,7 @@ import glob
 import time
 
 PKG_NAME = "rovioli"
-NODE_NAME = "run_rovioli_onlyvo"
-BAG_ROOT = "/dataset"
+DATA_ROOT = "/work/dataset"
 OUTPUT_ROOT = "/work/output"
 TEST_NUM = 5
 
@@ -24,14 +23,12 @@ def run_maplab(opt):
         command_makers = [euroc_mav]
         commands = []
         configs = []
-        for preset in [0, 1]:
-            opt.preset = preset
+        for cmdmaker in command_makers:
             for tid in range(TEST_NUM):
                 opt.test_id = tid
-                for cmdmaker in command_makers:
-                    cmds, cfgs = cmdmaker(opt)
-                    commands.extend(cmds)
-                    configs.extend(cfgs)
+                cmds, cfgs = cmdmaker(opt)
+                commands.extend(cmds)
+                configs.extend(cfgs)
     elif opt.dataset == "euroc_mav":
         commands, configs = euroc_mav(opt)
     else:
@@ -43,9 +40,9 @@ def run_maplab(opt):
         time.sleep(1)
 
     for cmd, cfg in zip(commands, configs):
-        outfile = cmd[-1][7:]
+        outfile = cmd[-1]
         os.makedirs(op.dirname(outfile), exist_ok=True)
-        print("\n===== RUN DSO\nconfig: {}\ncmd: {}\n".format(cfg, cmd))
+        print("\n===== RUN maplab\nconfig: {}\ncmd: {}\n".format(cfg, cmd))
         subprocess.run(cmd)
         subprocess.run(["chmod", "-R", "a+rw", OUTPUT_ROOT])
         assert op.isfile(outfile), "===== ERROR: output file was NOT created: {}".format(outfile)
@@ -53,28 +50,31 @@ def run_maplab(opt):
 
 def check_base_paths():
     assert op.isfile("/work/catkin_ws/devel/lib/rovioli/rovioli"), "ROVIOLI executer doesn't exist"
-    assert op.isdir(BAG_ROOT), "datset dir doesn't exist"
+    assert op.isdir(DATA_ROOT), "datset dir doesn't exist"
     assert op.isdir(OUTPUT_ROOT), "output dir doesn't exist"
 
 
 def euroc_mav(opt):
-    dataset_path = op.join(BAG_ROOT, "euroc_bag")
-    outname = "rovioli_vio"
-    sequences = glob.glob(dataset_path + "*.bag")
+    node_name = "run_rovioli_euroc_vo"
+    dataset_path = op.join(DATA_ROOT, "euroc_bag")
+    output_path = op.join(OUTPUT_ROOT, "rovioli_vio")
+    if not op.isdir(output_path):
+        os.makedirs(output_path)
+    sequences = glob.glob(dataset_path + "/*.bag")
     if opt.seq_idx != -1:
         sequences = [sequences[opt.seq_idx]]
 
     commands = []
     configs = []
     for si, bagfile in enumerate(sequences):
+        assert op.isfile(bagfile), "bag doesn't exist: " + bagfile
         outfile = op.basename(bagfile)
         outfile = outfile.split("_")
-        outfile = op.join(OUTPUT_ROOT, outname, "{}_{}.csv".format(outfile[0], outfile[1]))
+        outfile = op.join(output_path, "{}_{}_t{}.csv"
+                          .format(outfile[0], outfile[1], opt.test_id))
 
-        assert op.isfile(bagfile), "bag doesn't exist: " + bagfile
-
-        cmd = ["rosrun", PKG_NAME, NODE_NAME, bagfile, outfile]
-        print("===== tum_mono_vo command =====\n", " ".join(cmd))
+        cmd = ["rosrun", PKG_NAME, node_name, bagfile, outfile]
+        print("===== euroc_mav dataset =====\n", " ".join(cmd))
         commands.append(cmd)
         conf = {"dataset": "euroc_mav", "sequence": op.basename(bagfile),
                 "test id": opt.test_id, "output": outfile}
