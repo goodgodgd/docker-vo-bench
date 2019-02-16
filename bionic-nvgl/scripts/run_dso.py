@@ -9,10 +9,13 @@ EXECUTER = "/work/project/dso/build/bin/dso_dataset"
 DATA_ROOT = "/work/dataset"
 OUTPUT_ROOT = "/work/output"
 TEST_NUM = 5
+TEST_IDS = None
 
 
 def run_dso(opt):
     check_base_paths()
+    global TEST_IDS
+    TEST_IDS = list(range(TEST_NUM)) if opt.test_id < 0 else [opt.test_id]
 
     if opt.dataset == "all":
         command_makers = [tum_mono_vo, euroc_mav]
@@ -20,12 +23,10 @@ def run_dso(opt):
         configs = []
         for preset in [0, 1]:
             opt.preset = preset
-            for tid in range(TEST_NUM):
-                opt.test_id = tid
-                for cmdmaker in command_makers:
-                    cmds, cfgs = cmdmaker(opt)
-                    commands.extend(cmds)
-                    configs.extend(cfgs)
+            for cmdmaker in command_makers:
+                cmds, cfgs = cmdmaker(opt)
+                commands.extend(cmds)
+                configs.extend(cfgs)
     elif opt.dataset == "tum_mono_vo":
         commands, configs = tum_mono_vo(opt)
     elif opt.dataset == "euroc_mav":
@@ -38,10 +39,11 @@ def run_dso(opt):
         print("start DSO in {} sec".format(5-i))
         time.sleep(1)
 
-    for cmd, cfg in zip(commands, configs):
-        outfile = cmd[-1][7:]
+    for ci, (cmd, cfg) in enumerate(zip(commands, configs)):
+        outfile = cmd[-1]
         os.makedirs(op.dirname(outfile), exist_ok=True)
-        print("\n===== RUN DSO\nconfig: {}\ncmd: {}\n".format(cfg, cmd))
+        print("\n===== RUN DSO {}/{}\nconfig: {}\ncmd: {}\n"
+              .format(ci+1, len(commands), cfg, cmd))
         subprocess.run(cmd)
         subprocess.run(["chmod", "-R", "a+rw", OUTPUT_ROOT])
         assert op.isfile(outfile), "===== ERROR: output file was NOT created: {}".format(outfile)
@@ -87,22 +89,23 @@ def tum_mono_vo(opt):
     commands = []
     configs = []
     for si, seq_path in enumerate(sequences):
-        image = op.join(seq_path, "images.zip")
-        calib = op.join(seq_path, "camera.txt")
-        gamma = op.join(seq_path, "pcalib.txt")
-        vignette = op.join(seq_path, "vignette.png")
-        preset = str(opt.preset)
-        filename = "tum_mono_s{}_t{}.txt".format(op.basename(seq_path)[-2:], opt.test_id)
-        result = op.join(output_path, filename)
+        for test_id in TEST_IDS:
+            image = op.join(seq_path, "images.zip")
+            calib = op.join(seq_path, "camera.txt")
+            gamma = op.join(seq_path, "pcalib.txt")
+            vignette = op.join(seq_path, "vignette.png")
+            preset = str(opt.preset)
+            filename = "tum_mono_s{}_t{}.txt".format(op.basename(seq_path)[-2:], test_id)
+            result = op.join(output_path, filename)
 
-        cmd = [EXECUTER, "files=" + image, "calib=" + calib, "gamma=" + gamma,
-               "vignette=" + vignette, "preset=" + preset, "mode=" + mode,
-               "quiet=1", "result=" + result]
-        print("===== tum_mono_vo command =====\n", " ".join(cmd))
-        commands.append(cmd)
-        conf = {"dataset": "tum_mono_vo", "sequence": op.basename(seq_path),
-                "preset": preset, "mode": mode, "test id": opt.test_id}
-        configs.append(conf)
+            cmd = [EXECUTER, "files=" + image, "calib=" + calib, "gamma=" + gamma,
+                   "vignette=" + vignette, "preset=" + preset, "mode=" + mode,
+                   "quiet=1", "result=" + result]
+            print("===== tum_mono_vo command =====\n", " ".join(cmd))
+            commands.append(cmd)
+            conf = {"dataset": "tum_mono_vo", "sequence": op.basename(seq_path),
+                    "preset": preset, "mode": mode, "test id": test_id}
+            configs.append(conf)
     return commands, configs
 
 
@@ -120,20 +123,21 @@ def euroc_mav(opt):
     commands = []
     configs = []
     for si, seq_path in enumerate(sequences):
-        create_euroc_calib(seq_path)
-        image = op.join(seq_path, "data")
-        calib = op.join(seq_path, "camera.txt")
-        preset = str(opt.preset)
-        filename = "euroc_mav_s{}_t{}.txt".format(si, opt.test_id)
-        result = op.join(output_path, filename)
+        for test_id in TEST_IDS:
+            create_euroc_calib(seq_path)
+            image = op.join(seq_path, "data")
+            calib = op.join(seq_path, "camera.txt")
+            preset = str(opt.preset)
+            filename = "euroc_mav_s{}_t{}.txt".format(si, test_id)
+            result = op.join(output_path, filename)
 
-        cmd = [EXECUTER, "files=" + image, "calib=" + calib, "preset=" + preset,
-               "mode=" + mode, "quiet=1", "result=" + result]
-        print("===== tum_mono_vo command =====\n", " ".join(cmd))
-        commands.append(cmd)
-        conf = {"dataset": "tum_mono_vo", "sequence": op.basename(seq_path),
-                "preset": preset, "mode": mode, "test id": opt.test_id}
-        configs.append(conf)
+            cmd = [EXECUTER, "files=" + image, "calib=" + calib, "preset=" + preset,
+                   "mode=" + mode, "quiet=1", "result=" + result]
+            print("===== tum_mono_vo command =====\n", " ".join(cmd))
+            commands.append(cmd)
+            conf = {"dataset": "tum_mono_vo", "sequence": op.basename(seq_path),
+                    "preset": preset, "mode": mode, "test id": test_id}
+            configs.append(conf)
     return commands, configs
 
 
@@ -174,7 +178,7 @@ def main():
     parser.add_argument("dataset", type=str, help="dataset name")
     parser.add_argument("-m", "--preset", default=0, type=int,
                         help="0: not enforcing realtime, 1: enforcing realtime")
-    parser.add_argument("-t", "--test_id", default=0, type=int, help="test id")
+    parser.add_argument("-t", "--test_id", default=-1, type=int, help="test id")
     parser.add_argument("-s", "--seq_idx", default=-1, type=int,
                         help="int: index of sequence in sequence list, -1 means all")
     opt = parser.parse_args()
