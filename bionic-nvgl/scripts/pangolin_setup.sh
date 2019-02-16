@@ -12,7 +12,7 @@ apt install -y libjpeg-dev libpng-dev libtiff-dev libopenexr-dev
 # apt install -y libjpeg-dev libpng12-dev libtiff5-dev libopenexr-dev	(ubuntu 16.04)
 
 echo "========== build =========="
-cd /work/Pangolin
+cd /work/project/Pangolin
 rm -rf build || true
 mkdir build
 cd build
@@ -20,7 +20,7 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j4
 make install
 
-cd /work
+cd /work/project
 chmod -R a+rw ./
 
 echo "[Complete!!!]"

@@ -5,8 +5,8 @@ import argparse
 import glob
 import time
 
-EXECUTER = "/work/dso/build/bin/dso_dataset"
-DATA_ROOT = "/data"
+EXECUTER = "/work/project/dso/build/bin/dso_dataset"
+DATA_ROOT = "/work/dataset"
 OUTPUT_ROOT = "/work/output"
 TEST_NUM = 5
 
@@ -77,6 +77,9 @@ def tum_mono_vo(opt):
     dataset_path = op.join(DATA_ROOT, "tum_mono_vo")
     mode = "0"
     outname = "dso_efrt" if opt.preset == 0 else "dso_nort"
+    output_path = op.join(OUTPUT_ROOT, outname, "pose")
+    if not op.isdir(output_path):
+        os.makedirs(output_path)
     sequences = [s.rstrip("/") for s in glob.glob(dataset_path + "/*/")]
     if opt.seq_idx != -1:
         sequences = [sequences[opt.seq_idx]]
@@ -90,7 +93,7 @@ def tum_mono_vo(opt):
         vignette = op.join(seq_path, "vignette.png")
         preset = str(opt.preset)
         filename = "tum_mono_s{}_t{}.txt".format(op.basename(seq_path)[-2:], opt.test_id)
-        result = op.join(OUTPUT_ROOT, outname, "pose", filename)
+        result = op.join(output_path, filename)
 
         cmd = [EXECUTER, "files=" + image, "calib=" + calib, "gamma=" + gamma,
                "vignette=" + vignette, "preset=" + preset, "mode=" + mode,
@@ -107,6 +110,9 @@ def euroc_mav(opt):
     dataset_path = op.join(DATA_ROOT, "euroc")
     mode = "1"
     outname = "dso_efrt" if opt.preset == 0 else "dso_nort"
+    output_path = op.join(OUTPUT_ROOT, outname, "pose")
+    if not op.isdir(output_path):
+        os.makedirs(output_path)
     sequences = [s + "mav0/cam0" for s in glob.glob(dataset_path + "/*/")]
     if opt.seq_idx != -1:
         sequences = [sequences[opt.seq_idx]]
@@ -119,7 +125,7 @@ def euroc_mav(opt):
         calib = op.join(seq_path, "camera.txt")
         preset = str(opt.preset)
         filename = "euroc_mav_s{}_t{}.txt".format(si, opt.test_id)
-        result = op.join(OUTPUT_ROOT, outname, "pose", filename)
+        result = op.join(output_path, filename)
 
         cmd = [EXECUTER, "files=" + image, "calib=" + calib, "preset=" + preset,
                "mode=" + mode, "quiet=1", "result=" + result]

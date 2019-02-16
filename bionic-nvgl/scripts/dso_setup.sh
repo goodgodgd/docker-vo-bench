@@ -11,7 +11,7 @@ echo "========== install ziplib =========="
 
 if [ ! -f /usr/local/include/zipconf.h ]; then
 	apt install -y zlib1g-dev
-	cd /work/dso/thirdparty
+	cd /work/project/dso/thirdparty
 	tar -zxvf libzip-1.1.1.tar.gz
 	cd libzip-1.1.1/
 	./configure
@@ -21,14 +21,14 @@ if [ ! -f /usr/local/include/zipconf.h ]; then
 fi
 
 echo "========== build dso =========="
-cd /work/dso
+cd /work/project/dso
 rm -rf build || true
 mkdir -p build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j4
 
-cd /work
+cd /work/project
 chmod -R a+rw ./
 
 echo "[Complete!!!]"

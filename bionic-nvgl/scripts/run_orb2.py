@@ -4,9 +4,9 @@ import subprocess
 import argparse
 import glob
 
-ORB2_ROOT = "/work/ORB_SLAM2"
+ORB2_ROOT = "/work/project/ORB_SLAM2"
 VOCABULARY = ORB2_ROOT + "/Vocabulary/ORBvoc.txt"
-DATA_ROOT = "/data"
+DATA_ROOT = "/work/dataset"
 OUTPUT_ROOT = "/work/output"
 TEST_NUM = 5
 
@@ -61,6 +61,10 @@ def mono_tum_rgbd(opt):
     exec_path = op.join(ORB2_ROOT, "Examples/Monocular")
     executer = op.join(exec_path, "mono_tum")
     dataset_path = op.join(DATA_ROOT, "tum_rgbd")
+    outname = "orb2_vo_mono" if opt.loopclosing == 0 else "orb2_slam_mono"
+    output_path = op.join(OUTPUT_ROOT, outname, "pose")
+    if not op.isdir(output_path):
+        os.makedirs(output_path)
     sequences = [s.rstrip("/") for s in glob.glob(dataset_path + "/*/")]
     if opt.seq_idx != -1:
         sequences = [sequences[opt.seq_idx]]
@@ -77,10 +81,9 @@ def mono_tum_rgbd(opt):
         else:
             raise FileNotFoundError()
 
-        output_dir = "orb2_vo_mono" if opt.loopclosing == 0 else "orb2_slam_mono"
         filename = op.basename(seq_path).replace("rgbd_dataset_freiburg", "tum_fr") \
                    + "_t{}.txt".format(opt.test_id)
-        output_file = op.join(OUTPUT_ROOT, output_dir, "pose", filename)
+        output_file = op.join(output_path, filename)
         cmd = [executer, VOCABULARY, config_file, seq_path, str(opt.loopclosing), output_file]
         print("===== mono tum command =====\n", " ".join(cmd))
         commands.append(cmd)
@@ -96,6 +99,10 @@ def mono_kitti(opt):
     exec_path = op.join(ORB2_ROOT, "Examples/Monocular")
     executer = op.join(exec_path, "mono_kitti")
     dataset_path = op.join(DATA_ROOT, "kitti_odom", "sequences")
+    outname = "orb2_vo_mono" if opt.loopclosing == 0 else "orb2_slam_mono"
+    output_path = op.join(OUTPUT_ROOT, outname, "pose")
+    if not op.isdir(output_path):
+        os.makedirs(output_path)
     sequences = [s.rstrip("/") for s in glob.glob(dataset_path + "/*/")]
     if opt.seq_idx != -1:
         sequences = [sequences[opt.seq_idx]]
@@ -113,8 +120,7 @@ def mono_kitti(opt):
         else:
             raise FileNotFoundError()
 
-        output_dir = "orb2_vo_mono" if opt.loopclosing == 0 else "orb2_slam_mono"
-        output_file = op.join(OUTPUT_ROOT, output_dir, "pose", "kitti_odom_"
+        output_file = op.join(output_path, "kitti_"
                               + op.basename(seq_path) + "_t{}.txt".format(opt.test_id))
         cmd = [executer, VOCABULARY, config_file, seq_path, str(opt.loopclosing), output_file]
         print("===== mono kitti command\n", " ".join(cmd))
@@ -132,9 +138,11 @@ def mono_euroc(opt):
     exec_path = op.join(ORB2_ROOT, "Examples/Monocular")
     executer = op.join(exec_path, "mono_euroc")
     dataset_path = op.join(DATA_ROOT, "euroc")
+    outname = "orb2_vo_mono" if opt.loopclosing == 0 else "orb2_slam_mono"
+    output_path = op.join(OUTPUT_ROOT, outname, "pose")
+    if not op.isdir(output_path):
+        os.makedirs(output_path)
     sequences = [s + "mav0/cam0/data" for s in glob.glob(dataset_path + "/*/")]
-    sequences = [seq.replace("mav0/cam0", "cam0") if "MH_" in seq else seq
-                 for seq in sequences]
     if opt.seq_idx != -1:
         sequences = [sequences[opt.seq_idx]]
 
@@ -146,9 +154,8 @@ def mono_euroc(opt):
         timefile = timefile.split("_")
         timefile = op.join(exec_path, "EuRoC_TimeStamps", timefile[0] + timefile[1] + ".txt")
 
-        output_dir = "orb2_vo_mono" if opt.loopclosing == 0 else "orb2_slam_mono"
         filename = "euroc_" + op.basename(timefile).replace(".txt", "_t{}.txt".format(opt.test_id))
-        output_file = op.join(OUTPUT_ROOT, output_dir, "pose", filename)
+        output_file = op.join(output_path, filename)
         cmd = [executer, VOCABULARY, config_file, seq_path, timefile, str(opt.loopclosing), output_file]
         print("===== mono euroc command\n", " ".join(cmd))
         commands.append(cmd)
@@ -164,6 +171,10 @@ def stereo_kitti(opt):
     exec_path = op.join(ORB2_ROOT, "Examples/Stereo")
     executer = op.join(exec_path, "stereo_kitti")
     dataset_path = op.join(DATA_ROOT, "kitti_odom", "sequences")
+    outname = "orb2_vo_stereo" if opt.loopclosing == 0 else "orb2_slam_stereo"
+    output_path = op.join(OUTPUT_ROOT, outname, "pose")
+    if not op.isdir(output_path):
+        os.makedirs(output_path)
     sequences = [s.rstrip("/") for s in glob.glob(dataset_path + "/*/")]
     if opt.seq_idx != -1:
         sequences = [sequences[opt.seq_idx]]
@@ -181,8 +192,7 @@ def stereo_kitti(opt):
         else:
             raise FileNotFoundError()
 
-        output_dir = "orb2_vo_stereo" if opt.loopclosing == 0 else "orb2_slam_stereo"
-        output_file = op.join(OUTPUT_ROOT, output_dir, "pose", "kitti_odom_"
+        output_file = op.join(output_path, "kitti_"
                               + op.basename(seq_path) + "_t{}.txt".format(opt.test_id))
         cmd = [executer, VOCABULARY, config_file, seq_path, str(opt.loopclosing), output_file]
         print("===== stereo kitti command\n", " ".join(cmd))
@@ -201,8 +211,10 @@ def stereo_euroc(opt):
     executer = op.join(exec_path, "stereo_euroc")
     dataset_path = op.join(DATA_ROOT, "euroc")
     sequences = [s + "mav0/cam0/data" for s in glob.glob(dataset_path + "/*/")]
-    sequences = [seq.replace("mav0/cam0", "cam0") if "MH_" in seq else seq
-                 for seq in sequences]
+    outname = "orb2_vo_stereo" if opt.loopclosing == 0 else "orb2_slam_stereo"
+    output_path = op.join(OUTPUT_ROOT, outname, "pose")
+    if not op.isdir(output_path):
+        os.makedirs(output_path)
     if opt.seq_idx != -1:
         sequences = [sequences[opt.seq_idx]]
 
@@ -215,9 +227,8 @@ def stereo_euroc(opt):
         timefile = timefile.split("_")
         timefile = op.join(exec_path, "EuRoC_TimeStamps", timefile[0] + timefile[1] + ".txt")
 
-        output_dir = "orb2_vo_stereo" if opt.loopclosing == 0 else "orb2_slam_stereo"
         filename = "euroc_" + op.basename(timefile).replace(".txt", "_t{}.txt".format(opt.test_id))
-        output_file = op.join(OUTPUT_ROOT, output_dir, "pose", filename)
+        output_file = op.join(output_path, filename)
         cmd = [executer, VOCABULARY, config_file, right_seq, left_seq, timefile,
                str(opt.loopclosing), output_file]
         print("===== stereo euroc command\n", " ".join(cmd))

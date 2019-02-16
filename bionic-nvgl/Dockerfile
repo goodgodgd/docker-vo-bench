@@ -14,14 +14,3 @@ RUN apt-get update \
 	&& apt install -y libdc1394-22-dev libraw1394-dev libuvc-dev libopenni2-dev \
 	&& apt install -y libjpeg-dev libpng-dev libtiff-dev libopenexr-dev
 
-
-# xhost +local:docker
-# nvidia-docker run --name vo-bench -it --env="DISPLAY" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" -v "/home/ian/workspace/docker/bionic-nvgl:/work" -v "/media/ian/iandata/datasets:/work/data" bionic-nvgl:dev bash
-# nvidia-docker run --name vo-bench2 -it --env="DISPLAY" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" -v "/home/ian/workplace/docker-vo/bionic-nvgl:/work" -v "/home/ian/workplace/docker-vo/dataset:/data" bionic-nvgl:dev2 bash
-
-# --rm: remove container after exit
-
-# crontab -e 하고 아래줄 추가
-# @reboot /bin/mount -t ntfs /dev/sdb1 /media/ian/iandata
-# @reboot /usr/bin/xhost +local:docker
-

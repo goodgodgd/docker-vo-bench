@@ -57,7 +57,7 @@ def check_base_paths():
 def euroc_mav(opt):
     node_name = "run_rovioli_euroc_vo"
     dataset_path = op.join(DATA_ROOT, "euroc_bag")
-    output_path = op.join(OUTPUT_ROOT, "rovioli_vio")
+    output_path = op.join(OUTPUT_ROOT, "rovioli_vio", "pose")
     if not op.isdir(output_path):
         os.makedirs(output_path)
     sequences = glob.glob(dataset_path + "/*.bag")
@@ -67,7 +67,6 @@ def euroc_mav(opt):
     commands = []
     configs = []
     for si, bagfile in enumerate(sequences):
-        assert op.isfile(bagfile), "bag doesn't exist: " + bagfile
         outfile = op.basename(bagfile)
         outfile = outfile.split("_")
         outfile = op.join(output_path, "{}_{}_t{}.csv"
