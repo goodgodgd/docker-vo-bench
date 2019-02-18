@@ -10,7 +10,7 @@ apt install -y libeigen3-dev libsuitesparse-dev qtdeclarative5-dev qt5-qmake lib
 
 echo "========== build =========="
 export CMAKE_PREFIX_PATH=/usr/local/lib/cmake/Pangolin
-ORB2_ROOT=/work/project/ORB_SLAM2
+ORB2_ROOT=/work/ORB_SLAM2
 
 echo -e "\nConfiguring and building Thirdparty/g2o ..."
 
@@ -57,7 +57,7 @@ if [ ! -f ORBvoc.txt ]; then
 	download_gdrive "1TeCFP7ykKMW6mYLZPT_tfvb3eY14VuBR" "ORBvoc.txt"
 fi
 
-cd /work/project
+cd /work
 chmod -R a+rw ./
 
 echo "[Complete!!!]"

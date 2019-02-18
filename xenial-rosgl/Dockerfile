@@ -13,17 +13,18 @@ RUN apt-get update \
 	&& apt-get install -y libboost-all-dev \
 	&& echo '========== install eigen3, opencv ==========' \
 	&& apt-get install -y libeigen3-dev libopencv-dev \
-	&& echo -e '\n========== install maplab dependencies ==========' \
-	&& apt install -y autotools-dev ccache doxygen dh-autoreconf git liblapack-dev libblas-dev libgtest-dev \
-	&& apt install -y libreadline-dev libssh2-1-dev pylint clang-format-3.8 python-autopep8 python-catkin-tools \
-	&& apt install -y python-pip python-git python-setuptools python-termcolor python-wstool libatlas3-base \
 	&& echo '========== install pangolin dependencies ==========' \
 	&& apt install -y libglew-dev libpython2.7-dev libpython3.5-dev \
 	&& apt install -y ffmpeg libavcodec-dev libavutil-dev libavformat-dev libswscale-dev libavdevice-dev \
 	&& apt install -y libdc1394-22-dev libraw1394-dev libopenni2-dev \
 	&& apt install -y libjpeg-dev libpng-dev libtiff-dev libopenexr-dev \
+	&& echo -e '\n========== install maplab dependencies ==========' \
+	&& apt install -y autotools-dev ccache doxygen dh-autoreconf git 
+	&& apt install -y liblapack-dev libblas-dev libgtest-dev libv4l-dev \
+	&& apt install -y libreadline-dev libssh2-1-dev pylint clang-format-3.8 python-autopep8 python-catkin-tools \
+	&& apt install -y python-pip python-git python-setuptools python-termcolor python-wstool libatlas3-base \
 	&& echo '========== install ceres dependencies ==========' \
-	&& apt install -y libeigen3-dev libsuitesparse-dev libgoogle-glog-dev libatlas-base-dev
+	&& apt install -y libeigen3-dev libsuitesparse-dev libgoogle-glog-dev libatlas-base-dev libtbb-dev
 
 
 # pangolin dependency (optional): libuvc (For cross-platform webcam video input via libusb)
