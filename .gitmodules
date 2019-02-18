@@ -16,3 +16,24 @@
 [submodule "xenial-ros/catkin_ws/src/maplab"]
 	path = xenial-ros/catkin_ws/src/maplab
 	url = https://github.com/goodgodgd/maplab.git
+[submodule "xenial-rosgl/Pangolin"]
+	path = xenial-rosgl/Pangolin
+	url = https://github.com/stevenlovegrove/Pangolin.git
+[submodule "xenial-rosgl/ORB_SLAM2"]
+	path = xenial-rosgl/ORB_SLAM2
+	url = https://github.com/goodgodgd/ORB_SLAM2.git
+[submodule "xenial-rosgl/ceres_solver"]
+	path = xenial-rosgl/ceres_solver
+	url = https://ceres-solver.googlesource.com/ceres-solver
+[submodule "xenial-rosgl/catkin_ws/src/maplab"]
+	path = xenial-rosgl/catkin_ws/src/maplab
+	url = https://github.com/goodgodgd/maplab.git
+[submodule "xenial-rosgl/catkin_ws/src/maplab_dependencies"]
+	path = xenial-rosgl/catkin_ws/src/maplab_dependencies
+	url = https://github.com/ethz-asl/maplab_dependencies.git
+[submodule "xenial-rosgl/catkin_ws/src/vins-fusion"]
+	path = xenial-rosgl/catkin_ws/src/vins-fusion
+	url = https://github.com/goodgodgd/VINS-Fusion.git
+[submodule "xenial-rosgl/catkin_ws/src/rpg_svo_example"]
+	path = xenial-rosgl/catkin_ws/src/rpg_svo_example
+	url = https://github.com/goodgodgd/rpg_svo_example.git
