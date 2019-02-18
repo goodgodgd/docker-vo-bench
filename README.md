@@ -1,10 +1,6 @@
 # vo-bench
 
 
-```
-catkin build maplab
-```
-
 download tum vi dataset
 ```
 wget -R "index.*" -m -np -nH --no-check-certificate -e robots=off https://cdn3.vision.in.tum.de/tumvi/calibrated/512_16/
@@ -12,7 +8,7 @@ wget -R "index.*" -m -np -nH --no-check-certificate -e robots=off https://cdn3.v
 ```
 
 ```
-# add submodules
+# added submodules
 git submodule add https://github.com/stevenlovegrove/Pangolin.git xenial-rosgl/Pangolin
 git submodule add https://github.com/goodgodgd/ORB_SLAM2.git xenial-rosgl/ORB_SLAM2
 git submodule add https://ceres-solver.googlesource.com/ceres-solver xenial-rosgl/ceres_solver
@@ -23,19 +19,5 @@ git submodule add https://github.com/goodgodgd/rpg_svo_example.git xenial-rosgl/
 
 # pull all submodules recursively
 git submodule update --init --recursive
-```
-
-setup scripts
-```
-cd /work/scripts
-./pangolin_setup.sh
-./orb2_setup.sh
-./ceres_setup.sh
-./init_workspace.sh
-cd /work/catkin_ws
-# catkin_make does not work since plain cmake projectes are included in maplab
-catkin build maplab
-touch /work/catkin_ws/src/maplab_dependencies/internal/hand_eye_calibration/hand_eye_calibration_batch_estimation/CATKIN_IGNORE
-catkin build
 ```
 

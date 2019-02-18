@@ -9,6 +9,7 @@ RUN apt-get update \
 	&& /root/ros_kinetic_setup.sh \
 	&& echo -e '\n========== install basic apps ==========' \
 	&& apt-get install -y build-essential gedit nano wget curl unzip cmake cmake-gui git mesa-utils \
+	&& apt-get install -y rpl silversearcher-ag \
 	&& echo '========== install boost ==========' \
 	&& apt-get install -y libboost-all-dev \
 	&& echo '========== install eigen3, opencv ==========' \
@@ -19,14 +20,10 @@ RUN apt-get update \
 	&& apt install -y libdc1394-22-dev libraw1394-dev libopenni2-dev \
 	&& apt install -y libjpeg-dev libpng-dev libtiff-dev libopenexr-dev \
 	&& echo -e '\n========== install maplab dependencies ==========' \
-	&& apt install -y autotools-dev ccache doxygen dh-autoreconf git 
-	&& apt install -y liblapack-dev libblas-dev libgtest-dev libv4l-dev \
-	&& apt install -y libreadline-dev libssh2-1-dev pylint clang-format-3.8 python-autopep8 python-catkin-tools \
-	&& apt install -y python-pip python-git python-setuptools python-termcolor python-wstool libatlas3-base \
+	&& apt install -y autotools-dev ccache doxygen dh-autoreconf clang-format-3.8 \
+	&& apt install -y liblapack-dev libblas-dev libgtest-dev libv4l-dev libatlas3-base \
+	&& apt install -y libreadline-dev libssh2-1-dev pylint python-autopep8 python-catkin-tools \
+	&& apt install -y python-pip python-git python-setuptools python-termcolor python-wstool \
 	&& echo '========== install ceres dependencies ==========' \
 	&& apt install -y libeigen3-dev libsuitesparse-dev libgoogle-glog-dev libatlas-base-dev libtbb-dev
-
-
-# pangolin dependency (optional): libuvc (For cross-platform webcam video input via libusb)
-# 	install from source "https://github.com/ktossell/libuvc.git" in xeinal or "apt install libuvc-dev" in bionic
 

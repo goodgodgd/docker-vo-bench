@@ -40,7 +40,7 @@ class RunROVIOLI:
         for ci, (cmd, cfg) in enumerate(zip(commands, configs)):
             outfile = cmd[-1]
             os.makedirs(op.dirname(outfile), exist_ok=True)
-            print("\n===== RUN maplab {}/{}\nconfig: {}\ncmd: {}\n"
+            print("\n===== RUN ROVIOLI {}/{}\nconfig: {}\ncmd: {}\n"
                   .format(ci+1, len(commands), cfg, cmd))
             subprocess.run(cmd)
             subprocess.run(["chmod", "-R", "a+rw", self.OUTPUT_ROOT])
