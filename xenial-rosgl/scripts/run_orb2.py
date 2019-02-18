@@ -35,6 +35,8 @@ class RunORB2:
         else:
             raise FileNotFoundError()
 
+        print("===== Total {} runs".format(len(commands)))
+
         for ci, (cmd, cfg) in enumerate(zip(commands, configs)):
             outfile = cmd[-1]
             os.makedirs(op.dirname(outfile), exist_ok=True)
@@ -61,12 +63,12 @@ class RunORB2:
         executer = op.join(exec_path, "stereo_kitti")
         dataset = "kitti_odometry"
         dataset_path = op.join(self.DATA_ROOT, dataset, "sequences")
-        outname = "orb2_vo_stereo" if opt.loopclosing == 0 else "orb2_slam_stereo"
         output_path = op.join(self.OUTPUT_ROOT, dataset)
         sequences = [s.rstrip("/") for s in glob.glob(dataset_path + "/*/")]
         sequences = [s for s in sequences if int(op.basename(s)) <= 10]
         if opt.seq_idx != -1:
             sequences = [sequences[opt.seq_idx]]
+        outname = "orb2_vo_stereo" if opt.loopclosing == 0 else "orb2_slam_stereo"
 
         commands = []
         configs = []
@@ -104,10 +106,10 @@ class RunORB2:
         dataset = "euroc_mav"
         dataset_path = op.join(self.DATA_ROOT, dataset)
         sequences = [s + "mav0/cam0/data" for s in glob.glob(dataset_path + "/*/") if op.isdir(s+"mav0")]
-        outname = "orb2_vo_stereo" if opt.loopclosing == 0 else "orb2_slam_stereo"
         output_path = op.join(self.OUTPUT_ROOT, dataset)
         if opt.seq_idx != -1:
             sequences = [sequences[opt.seq_idx]]
+        outname = "orb2_vo_stereo" if opt.loopclosing == 0 else "orb2_slam_stereo"
 
         config_file = op.join(exec_path, "EuRoC.yaml")
         commands = []

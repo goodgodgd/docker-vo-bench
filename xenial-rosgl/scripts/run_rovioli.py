@@ -5,94 +5,93 @@ import argparse
 import glob
 import time
 
-PKG_NAME = "rovioli"
-DATA_ROOT = "/work/dataset"
-OUTPUT_ROOT = "/work/output"
-TEST_NUM = 5
-TEST_IDS = None
 
-# maplab USAGE:
-# rosrun rovioli run_rovioli_scratch
-#   /data/euroc_mav/MH_01_easy/MH_01_easy.bag
-#   /work/output/euroc_mav_mh01/traj.csv
+class RunROVIOLI:
+    def __init__(self):
+        self.PKG_NAME = "rovioli"
+        self.DATA_ROOT = "/data/dataset"
+        self.OUTPUT_ROOT = "/data/output"
+        self.TEST_NUM = 5
+        self.TEST_IDS = None
 
+    def run_rovioli(self, opt):
+        self.check_base_paths()
+        self.TEST_IDS = list(range(self.TEST_NUM)) if opt.test_id < 0 else [opt.test_id]
 
-def run_maplab(opt):
-    check_base_paths()
-    global TEST_IDS
-    TEST_IDS = list(range(TEST_NUM)) if opt.test_id < 0 else [opt.test_id]
+        if opt.dataset == "all":
+            command_makers = [self.euroc_mav]
+            commands = []
+            configs = []
+            for cmdmaker in command_makers:
+                cmds, cfgs = cmdmaker(opt)
+                commands.extend(cmds)
+                configs.extend(cfgs)
+        elif opt.dataset == "euroc_mav":
+            commands, configs = self.euroc_mav(opt)
+        else:
+            raise FileNotFoundError()
 
-    if opt.dataset == "all":
-        command_makers = [euroc_mav]
+        print("===== Total {} runs".format(len(commands)))
+
+        for i in range(5):
+            print("start maplab in {} sec".format(5-i))
+            time.sleep(1)
+
+        for ci, (cmd, cfg) in enumerate(zip(commands, configs)):
+            outfile = cmd[-1]
+            os.makedirs(op.dirname(outfile), exist_ok=True)
+            print("\n===== RUN maplab {}/{}\nconfig: {}\ncmd: {}\n"
+                  .format(ci+1, len(commands), cfg, cmd))
+            subprocess.run(cmd)
+            subprocess.run(["chmod", "-R", "a+rw", self.OUTPUT_ROOT])
+            assert op.isfile(outfile), "===== ERROR: output file was NOT created: {}".format(outfile)
+
+    def check_base_paths(self):
+        assert op.isfile("/work/catkin_ws/devel/lib/rovioli/rovioli"), "ROVIOLI executer doesn't exist"
+        assert op.isdir(self.DATA_ROOT), "datset dir doesn't exist"
+        assert op.isdir(self.OUTPUT_ROOT), "output dir doesn't exist"
+
+    # Usage:
+    # rosrun rovioli run_rovioli_scratch
+    #       /path/to/dataset/MH_01_easy.bag
+    #       output_file
+    def euroc_mav(self, opt):
+        node_name = "run_rovioli_euroc_vo"
+        dataset = "euroc_mav"
+        dataset_path = op.join(self.DATA_ROOT, dataset, "bags")
+        output_path = op.join(self.OUTPUT_ROOT, dataset)
+        if not op.isdir(output_path):
+            os.makedirs(output_path)
+        sequences = glob.glob(dataset_path + "/*.bag")
+        if opt.seq_idx != -1:
+            sequences = [sequences[opt.seq_idx]]
+        outname = "rovioli_mvio"
+
         commands = []
         configs = []
-        for cmdmaker in command_makers:
-            cmds, cfgs = cmdmaker(opt)
-            commands.extend(cmds)
-            configs.extend(cfgs)
-    elif opt.dataset == "euroc_mav":
-        commands, configs = euroc_mav(opt)
-    else:
-        raise FileNotFoundError()
+        for si, bagfile in enumerate(sequences):
+            for test_id in self.TEST_IDS:
+                output_file = op.join(output_path, "{}_s{:02d}_{}.txt".format(outname, si, test_id))
 
-    # return
-    for i in range(5):
-        print("start maplab in {} sec".format(5-i))
-        time.sleep(1)
-
-    for ci, (cmd, cfg) in enumerate(zip(commands, configs)):
-        outfile = cmd[-1]
-        os.makedirs(op.dirname(outfile), exist_ok=True)
-        print("\n===== RUN maplab {}/{}\nconfig: {}\ncmd: {}\n"
-              .format(ci+1, len(commands), cfg, cmd))
-        subprocess.run(cmd)
-        subprocess.run(["chmod", "-R", "a+rw", OUTPUT_ROOT])
-        assert op.isfile(outfile), "===== ERROR: output file was NOT created: {}".format(outfile)
-
-
-def check_base_paths():
-    assert op.isfile("/work/catkin_ws/devel/lib/rovioli/rovioli"), "ROVIOLI executer doesn't exist"
-    assert op.isdir(DATA_ROOT), "datset dir doesn't exist"
-    assert op.isdir(OUTPUT_ROOT), "output dir doesn't exist"
-
-
-def euroc_mav(opt):
-    node_name = "run_rovioli_euroc_vo"
-    dataset_path = op.join(DATA_ROOT, "euroc_bag")
-    output_path = op.join(OUTPUT_ROOT, "rovioli_vio", "pose")
-    if not op.isdir(output_path):
-        os.makedirs(output_path)
-    sequences = glob.glob(dataset_path + "/*.bag")
-    if opt.seq_idx != -1:
-        sequences = [sequences[opt.seq_idx]]
-
-    commands = []
-    configs = []
-    for si, bagfile in enumerate(sequences):
-        for test_id in TEST_IDS:
-            outfile = op.basename(bagfile)
-            outfile = outfile.split("_")
-            outfile = op.join(output_path, "{}_{}_t{}.csv"
-                              .format(outfile[0], outfile[1], test_id))
-
-            cmd = ["rosrun", PKG_NAME, node_name, bagfile, outfile]
-            print("===== euroc_mav dataset =====\n", " ".join(cmd))
-            commands.append(cmd)
-            conf = {"dataset": "euroc_mav", "sequence": op.basename(bagfile),
-                    "test id": test_id, "output": outfile}
-            configs.append(conf)
-    return commands, configs
+                cmd = ["rosrun", self.PKG_NAME, node_name, bagfile, output_file]
+                commands.append(cmd)
+                conf = {"executer": outname, "dataset": dataset, "seq_name": op.basename(bagfile),
+                        "seq_id": si, "test id": test_id}
+                configs.append(conf)
+            print("===== command:", " ".join(commands[-1]))
+        return commands, configs
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("dataset", type=str, help="dataset name")
+    parser.add_argument("-d", "--dataset", default="all", type=str, help="dataset name")
     parser.add_argument("-t", "--test_id", default=-1, type=int, help="test id")
     parser.add_argument("-s", "--seq_idx", default=-1, type=int,
                         help="int: index of sequence in sequence list, -1 means all")
     opt = parser.parse_args()
 
-    run_maplab(opt)
+    rovioli = RunROVIOLI()
+    rovioli.run_rovioli(opt)
 
 
 if __name__ == "__main__":
