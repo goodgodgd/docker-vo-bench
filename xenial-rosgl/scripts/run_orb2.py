@@ -11,12 +11,12 @@ class RunORB2:
         self.VOCABULARY = self.ORB2_ROOT + "/Vocabulary/ORBvoc.txt"
         self.DATA_ROOT = "/data/dataset"
         self.OUTPUT_ROOT = "/data/output"
-        self.TEST_NUM = 5
+        self.NUM_TEST = 5
         self.TEST_IDS = None
 
     def run_orb2(self, opt):
         self.check_base_paths()
-        self.TEST_IDS = list(range(self.TEST_NUM)) if opt.test_id < 0 else [opt.test_id]
+        self.TEST_IDS = list(range(self.NUM_TEST)) if opt.test_id < 0 else [opt.test_id]
 
         if opt.exec == "all":
             command_makers = [self.stereo_euroc]
