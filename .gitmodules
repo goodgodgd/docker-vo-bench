@@ -1,21 +1,3 @@
-[submodule "bionic-nvgl/dso"]
-	path = bionic-nvgl/dso
-	url = https://github.com/goodgodgd/dso.git
-[submodule "bionic-nvgl/ORB_SLAM2"]
-	path = bionic-nvgl/ORB_SLAM2
-	url = https://github.com/goodgodgd/ORB_SLAM2.git
-[submodule "bionic-nvgl/Pangolin"]
-	path = bionic-nvgl/Pangolin
-	url = https://github.com/stevenlovegrove/Pangolin.git
-[submodule "trusty-ros/catkin_ws/src/ORB_SLAM"]
-	path = trusty-ros/catkin_ws/src/ORB_SLAM
-	url = https://github.com/goodgodgd/ORB_SLAM.git
-[submodule "xenial-ros/catkin_ws/src/maplab_dependencies"]
-	path = xenial-ros/catkin_ws/src/maplab_dependencies
-	url = https://github.com/ethz-asl/maplab_dependencies.git
-[submodule "xenial-ros/catkin_ws/src/maplab"]
-	path = xenial-ros/catkin_ws/src/maplab
-	url = https://github.com/goodgodgd/maplab.git
 [submodule "xenial-rosgl/Pangolin"]
 	path = xenial-rosgl/Pangolin
 	url = https://github.com/stevenlovegrove/Pangolin.git
