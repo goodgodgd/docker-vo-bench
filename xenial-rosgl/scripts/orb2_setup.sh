@@ -1,14 +1,14 @@
 #!/bin/bash
 
-echo "========== apt upate =========="
+echo "---------- apt upate ----------"
 apt update
 #apt upgrade -y
 
-echo "========== apt install =========="
+echo "---------- apt install ----------"
 apt install -y libeigen3-dev libsuitesparse-dev qtdeclarative5-dev qt5-qmake libqglviewer-dev
 # rm -rf /var/lib/apt/lists/*
 
-echo "========== build =========="
+echo "---------- build ----------"
 export CMAKE_PREFIX_PATH=/usr/local/lib/cmake/Pangolin
 ORB2_ROOT=/work/ORB_SLAM2
 
@@ -40,7 +40,7 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j4
 
 # assuming that /work is shared with host and it contains ORB_SLAM
-echo -e "\n========== download vocabulary =========="
+echo -e "\n---------- download vocabulary ----------"
 cd $ORB2_ROOT
 mkdir -p Vocabulary
 cd ${ORB2_ROOT}/Vocabulary

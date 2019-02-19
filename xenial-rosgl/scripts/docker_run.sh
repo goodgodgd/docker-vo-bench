@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PROJECT=/home/ian/workspace/docker-vo-bench
+PROJECT=/home/ian/workspace/docker-vo
 DATASET=/media/ian/iandata/datasets
 
 nvidia-docker run --name vo-bench -it --env="DISPLAY" \

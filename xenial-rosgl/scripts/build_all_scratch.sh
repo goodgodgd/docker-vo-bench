@@ -18,12 +18,19 @@ $SCRIPT_PATH/ceres_setup.sh
 echo -e "\n===== Build Maplab (ROVIOLI) ======\n"
 $SCRIPT_PATH/init_workspace.sh
 cd $WORKDIR/catkin_ws
-# catkin_make does not work since plain cmake projectes are included in maplab
+
+# Ignore hand_eye_calibration in maplab_dependencies, 
+# it makes build error but does not matter for maplab or ROVIOLI
+touch $WORKDIR/catkin_ws/src/maplab_dependencies/internal/hand_eye_calibration/CATKIN_IGNORE
+# Note: do NOT catkin_make since plain cmake projectes are included in maplab
 catkin build maplab
 
-echo -e "\n===== Build Vins, Svo ======\n"
-# ignore hand_eye_calibration in maplab_dependencies, it makes build error but does not matter for maplab or ROVIOLI
-touch $WORKDIR/catkin_ws/src/maplab_dependencies/internal/hand_eye_calibration/hand_eye_calibration_batch_estimation/CATKIN_IGNORE
-# build all other packages: vins, svo_ros
+echo -e "\n===== Build VinsFusion ======\n"
 catkin build
+catkin build vins
+
+if [ -d "/work/svo_install_ws" ]; then
+	echo -e "\n===== Build SVO2 ======\n"
+	catkin build svo_ros
+fi
 
