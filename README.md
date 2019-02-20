@@ -22,3 +22,10 @@ git submodule add https://github.com/catkin/catkin_simple.git xenial-rosgl/svo2_
 git submodule update --init --recursive
 ```
 
+
+
+```
+# run all
+source /work/maplab_ws/devel/setup.bash ; python3 run_rovioli.py ; source /work/vins_ws/devel/setup.bash ; python3 run_vinsfusion.py ; source /work/svo2_ws/devel/setup.bash ; python3 run_svo2.py | python3 run_orb2.py
+```
+
