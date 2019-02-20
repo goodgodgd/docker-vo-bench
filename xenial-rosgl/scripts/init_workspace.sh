@@ -1,35 +1,45 @@
 #!/bin/bash
 
-if [ -d "/work/svo_install_ws" ]; then
-	echo "[Fix paths for SVO2]"
-	mv /work/svo_install_ws /work/svo2_ws
-	mv /work/svo2_ws/install /work/svo2_ws/devel
-	cd /work/svo2_ws
-	grep -IRl "/home/zichao/svo_install_ws" install/ | xargs sed -i "s:/home/zichao/svo_install_ws:/work/svo2_ws:g"
-fi
-
 WORK_ROOT="/work"
 ROS_VERSION="kinetic"
 MAPLAB_WS="$WORK_ROOT/maplab_ws"
 VINS_WS="$WORK_ROOT/vins_ws"
 SVO2_WS="$WORK_ROOT/svo2_ws"
 
+if [ -d "$SVO2_WS" ]; then
+	echo "[Fix paths for SVO2]"
+	cd $SVO2_WS
+	mv install devel
+	grep -IRl "/home/zichao/svo_install_ws" devel/ | xargs sed -i "s:/home/zichao/svo_install_ws:/work/svo2_ws:g"
+fi
+ag "/home/zichao/svo_install_ws"
+sleep 2
+
 catkin_init_ws_and_build() {
 	echo -e "\n[Make $1 workspace] >>> $2"
 	cd $2
-	rm -rf install devel logs .catkin_tools || true
+	ls
+	if [ $3 -eq 1 ]; then
+		rm -rf devel || true
+		echo "remove devel $3"
+		sleep 3
+	fi
+	rm -rf install logs .catkin_tools || true
 	catkin init
 	catkin config --merge-devel # Necessary for catkin_tools >= 0.4.
 	catkin config --extend /opt/ros/kinetic
 	catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release
 
 	echo -e "\n[Build $1]"
-	catkin build maplab
+	catkin build $4
+	catkin build $4
+	echo -e "[Build finished]"
+	sleep 5
 }
 
-catkin_init_ws_and_build "vins" $VINS_WS
-catkin_init_ws_and_build "svo2" $SVO2_WS
-catkin_init_ws_and_build "maplab" $MAPLAB_WS
+catkin_init_ws_and_build "svo2" $SVO2_WS 0 ""
+catkin_init_ws_and_build "maplab" $MAPLAB_WS 1 "maplab"
+catkin_init_ws_and_build "vins" $VINS_WS 1 ""
 
 echo "[Set the ROS evironment]"
 sh -c "echo \"source /opt/ros/$ROS_VERSION/setup.bash\" >> ~/.bashrc"

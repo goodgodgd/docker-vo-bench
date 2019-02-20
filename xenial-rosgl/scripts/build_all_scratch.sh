@@ -2,8 +2,6 @@
 
 WORK_ROOT=/work
 SCRIPT_PATH=$WORK_ROOT/scripts
-CATKIN_WS=$WORK_ROOT/catkin_ws
-SVO_WS="$WORK_ROOT/svo_install_ws"
 
 echo -e "\n===== Remove all build files ======\n"
 find $WORK_ROOT -name build -exec rm -rf {} +
@@ -28,6 +26,11 @@ if [ ! -f "/usr/local/lib/libceres.a" ]; then
 	echo "Ceres solver setup failed"
 	exit 1
 fi
+
+exit 0
+
+
+
 
 echo -e "\n===== Init catkin workspace ======\n"
 $SCRIPT_PATH/init_workspace.sh

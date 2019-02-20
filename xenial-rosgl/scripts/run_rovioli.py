@@ -39,6 +39,8 @@ class RunROVIOLI:
             print("start maplab in {} sec".format(3-i))
             time.sleep(1)
 
+        subprocess.Popen(["roscore"])
+        time.sleep(3)
         for ci, (cmd, cfg) in enumerate(zip(commands, configs)):
             outfile = cmd[-1]
             os.makedirs(op.dirname(outfile), exist_ok=True)
@@ -50,7 +52,6 @@ class RunROVIOLI:
             self.format_to_tum(outfile)
 
     def check_base_paths(self):
-        assert op.isfile("/work/catkin_ws/devel/lib/rovioli/rovioli"), "ROVIOLI executer doesn't exist"
         assert op.isdir(self.DATA_ROOT), "datset dir doesn't exist"
         assert op.isdir(self.OUTPUT_ROOT), "output dir doesn't exist"
 

@@ -7,3 +7,15 @@
 [submodule "xenial-rosgl/ceres_solver"]
 	path = xenial-rosgl/ceres_solver
 	url = https://ceres-solver.googlesource.com/ceres-solver
+[submodule "xenial-rosgl/maplab_ws/src/maplab_dependencies"]
+	path = xenial-rosgl/maplab_ws/src/maplab_dependencies
+	url = https://github.com/ethz-asl/maplab_dependencies.git
+[submodule "xenial-rosgl/maplab_ws/src/maplab"]
+	path = xenial-rosgl/maplab_ws/src/maplab
+	url = https://github.com/goodgodgd/maplab.git
+[submodule "xenial-rosgl/vins_ws/src/vins-fusion"]
+	path = xenial-rosgl/vins_ws/src/vins-fusion
+	url = https://github.com/goodgodgd/VINS-Fusion.git
+[submodule "xenial-rosgl/svo2_ws/src/rpg_svo_example"]
+	path = xenial-rosgl/svo2_ws/src/rpg_svo_example
+	url = https://github.com/goodgodgd/rpg_svo_example.git
