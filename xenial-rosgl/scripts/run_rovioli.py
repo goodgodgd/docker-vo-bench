@@ -19,7 +19,14 @@ class RunROVIOLI:
     def run_rovioli(self, opt):
         self.check_base_paths()
         self.TEST_IDS = list(range(self.NUM_TEST)) if opt.test_id < 0 else [opt.test_id]
+        commands, configs = self.generate_commands(opt)
+        self.execute_commands(commands, configs)
 
+    def check_base_paths(self):
+        assert op.isdir(self.DATA_ROOT), "datset dir doesn't exist"
+        assert op.isdir(self.OUTPUT_ROOT), "output dir doesn't exist"
+
+    def generate_commands(self, opt):
         if opt.dataset == "all":
             command_makers = [self.euroc_mav]
             commands = []
@@ -33,8 +40,10 @@ class RunROVIOLI:
         else:
             raise FileNotFoundError()
 
-        print("===== Total {} runs".format(len(commands)))
+        print("\n===== Total {} runs\n".format(len(commands)))
+        return commands, configs
 
+    def execute_commands(self, commands, configs):
         for i in range(3):
             print("start maplab in {} sec".format(3-i))
             time.sleep(1)
@@ -44,16 +53,17 @@ class RunROVIOLI:
         for ci, (cmd, cfg) in enumerate(zip(commands, configs)):
             outfile = cmd[-1]
             os.makedirs(op.dirname(outfile), exist_ok=True)
+
             print("\n===== RUN ROVIOLI {}/{}\nconfig: {}\ncmd: {}\n"
                   .format(ci+1, len(commands), cfg, cmd))
+            if op.isfile(outfile):
+                print("This config has already executed, skip it ....")
+                continue
+
             subprocess.run(cmd)
             subprocess.run(["chmod", "-R", "a+rw", self.OUTPUT_ROOT])
             assert op.isfile(outfile), "===== ERROR: output file was NOT created: {}".format(outfile)
             self.format_to_tum(outfile)
-
-    def check_base_paths(self):
-        assert op.isdir(self.DATA_ROOT), "datset dir doesn't exist"
-        assert op.isdir(self.OUTPUT_ROOT), "output dir doesn't exist"
 
     # Usage:
     # rosrun rovioli run_rovioli_scratch

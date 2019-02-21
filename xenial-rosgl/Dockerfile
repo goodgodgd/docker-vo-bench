@@ -28,5 +28,6 @@ RUN apt-get update \
 	&& echo '========== install ceres dependencies ==========' \
 	&& apt install -y libeigen3-dev libsuitesparse-dev libgoogle-glog-dev libatlas-base-dev libtbb-dev \
 	&& echo -e '\n========== install optional utils ==========' \
-	&& apt-get install -y rpl silversearcher-ag cmake-gui
+	&& apt-get install -y rpl silversearcher-ag cmake-gui \
+	&& pip3 install pipenv
 

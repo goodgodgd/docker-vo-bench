@@ -42,6 +42,9 @@ catkin_init_ws_and_build "maplab" $MAPLAB_WS 1 "maplab"
 catkin_init_ws_and_build "vins" $VINS_WS 1 ""
 
 echo "[Set the ROS evironment]"
+
+sh -c "echo \"export LC_ALL=C.UTF-8\" >> ~/.bashrc"
+sh -c "echo \"export LANG=C.UTF-8\" >> ~/.bashrc"
 sh -c "echo \"source /opt/ros/$ROS_VERSION/setup.bash\" >> ~/.bashrc"
 sh -c "echo \"source $MAPLAB_WS/devel/setup.bash\" >> ~/.bashrc"
 sh -c "echo \"source $VINS_WS/devel/setup.bash\" >> ~/.bashrc"
