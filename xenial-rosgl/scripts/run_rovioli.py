@@ -28,7 +28,7 @@ class RunROVIOLI:
 
     def generate_commands(self, opt):
         if opt.dataset == "all":
-            command_makers = [self.euroc_mav]
+            command_makers = [self.euroc_mav, self.tum_vi]
             commands = []
             configs = []
             for cmdmaker in command_makers:
@@ -56,14 +56,25 @@ class RunROVIOLI:
 
             print("\n===== RUN ROVIOLI {}/{}\nconfig: {}\ncmd: {}\n"
                   .format(ci+1, len(commands), cfg, cmd))
-            if op.isfile(outfile):
+            txtfile = outfile.replace(".csv", ".txt")
+            if op.isfile(txtfile):
                 print("This config has already executed, skip it ....")
                 continue
 
             subprocess.run(cmd)
             subprocess.run(["chmod", "-R", "a+rw", self.OUTPUT_ROOT])
             assert op.isfile(outfile), "===== ERROR: output file was NOT created: {}".format(outfile)
-            self.format_to_tum(outfile)
+            self.format_tum_and_savetxt(outfile)
+
+    @staticmethod
+    def format_tum_and_savetxt(csvfile):
+        data = pd.read_csv(csvfile)
+        data = data.values
+        os.remove(csvfile)
+        if data.shape[1] > 8:
+            data = np.concatenate([np.expand_dims(data[:, 0], 1), data[:, 8:15]], axis=1)
+            txtfile = csvfile.replace(".csv", ".txt")
+            np.savetxt(txtfile, data, fmt="%1.6f")
 
     # Usage:
     # rosrun rovioli run_rovioli_scratch
@@ -90,17 +101,40 @@ class RunROVIOLI:
                 cmd = ["rosrun", self.PKG_NAME, node_name, bagfile, output_file]
                 commands.append(cmd)
                 conf = {"executer": outname, "dataset": dataset, "seq_name": op.basename(bagfile),
-                        "seq_id": si, "test id": test_id}
+                        "seq_id": si, "test_id": test_id}
                 configs.append(conf)
             print("===== command:", " ".join(commands[-1]))
         return commands, configs
 
-    def format_to_tum(self, filename):
-        data = pd.read_csv(filename)
-        data = data.values
-        if data.shape[1] > 8:
-            data = np.concatenate([np.expand_dims(data[:, 0], 1), data[:, 8:15]], axis=1)
-            np.savetxt(filename, data, fmt="%1.6f")
+    # Usage:
+    # rosrun rovioli run_rovioli_scratch
+    #       /path/to/dataset/MH_01_easy.bag
+    #       output_file
+    def tum_vi(self, opt):
+        node_name = "run_rovioli_tumvi_vo"
+        dataset = "tum_vi"
+        dataset_path = op.join(self.DATA_ROOT, dataset, "bags")
+        output_path = op.join(self.OUTPUT_ROOT, dataset)
+        if not op.isdir(output_path):
+            os.makedirs(output_path)
+        sequences = glob.glob(dataset_path + "/*.bag")
+        if opt.seq_idx != -1:
+            sequences = [sequences[opt.seq_idx]]
+        outname = "rovioli_mvio"
+
+        commands = []
+        configs = []
+        for si, bagfile in enumerate(sequences):
+            for test_id in self.TEST_IDS:
+                output_file = op.join(output_path, "{}_s{:02d}_{}.csv".format(outname, si, test_id))
+
+                cmd = ["rosrun", self.PKG_NAME, node_name, bagfile, output_file]
+                commands.append(cmd)
+                conf = {"executer": outname, "dataset": dataset, "seq_name": op.basename(bagfile),
+                        "seq_id": si, "test_id": test_id}
+                configs.append(conf)
+            print("===== command:", " ".join(commands[-1]))
+        return commands, configs
 
 
 def main():

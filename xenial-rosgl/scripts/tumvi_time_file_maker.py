@@ -3,7 +3,7 @@ import glob
 
 
 def create_timestamp():
-    srcpath = "/data/dataset/tum_vi/dataset-corridor4_512_16/dso/cam0/images"
+    srcpath = "/data/dataset/tum_vi/dataset-room3_512_16/dso/cam0/images"
     dstpath = "/work/ORB_SLAM2/Examples/Stereo/TumVI_TimeStamps"
     dataset_name = srcpath.split("/")[-4]
     dstfile = op.join(dstpath, dataset_name + ".txt")

@@ -2,75 +2,122 @@ import numpy as np
 import cv2
 import sys
 import yaml
+import os.path as op
+
+BASELINE = 0.10096822449780929
+
+
+class OmniCamera:
+    def __init__(self, intrin_, imgsz_, dist_, xi_):
+        # intrinsics: fx, fy, cx, cy
+        self.intrin = intrin_
+        # image size
+        self.imgsz = imgsz_
+        # distortion param
+        self.D = np.array(dist_, dtype=np.double)
+        # omni param
+        self.xi = xi_
+        # stereo baseline
+        # src camera matrix
+        self.K = self.camera_matrix(intrin_)
+        # rotation
+        self.R = np.identity(3, dtype=np.double)
+        # dst camera matrix
+        self.P = np.array([[imgsz_[0]/3.5, 0, imgsz_[0]/2],
+                          [0, imgsz_[1]/3.5, imgsz_[1]/2],
+                          [0, 0, 1]], dtype=np.double)
+
+    @staticmethod
+    def camera_matrix(intrin):
+        K = np.array([[intrin[0], 0, intrin[2]],
+                      [0, intrin[1], intrin[3]],
+                      [0, 0, 1]], dtype=np.double)
+        return K
+
+    def fx(self):
+        return self.intrin[0]
+
+    def fy(self):
+        return self.intrin[1]
+
+    def cx(self):
+        return self.intrin[2]
+
+    def cy(self):
+        return self.intrin[3]
+
+    def width(self):
+        return self.imgsz[0]
+
+    def height(self):
+        return self.imgsz[1]
 
 
 def tum_vi():
+    cv2.ocl.setUseOpenCL(False)
     sys.path.append("/usr/local/lib/python3.5/dist-packages/cv2")
-    cam0_params = [0.373004838186, 0.372994740336, 0.498890050897, 0.502729380663, 0.00348238940225, 0.000715034845216, -0.00205323614187, 0.000202936735918]
-    cam1_params = [0.371957753309, 0.371942262641, 0.494334955407, 0.498861778606, 0.00340031707904, 0.00176627815347, -0.00266312569782, 0.000329951742393]
-    img_size = [512, 512]
-    cam0_mat, cam0_dist, cam0_opt_mat = get_opt_new_cam_mat(cam0_params, img_size)
-    cam1_mat, cam1_dist, cam1_opt_mat = get_opt_new_cam_mat(cam1_params, img_size)
-    print("cam0 opt matrix\n", cam0_opt_mat)
-    print("cam1 opt matrix\n", cam1_opt_mat)
+    cam0 = OmniCamera(intrin_=[533.340727445877, 533.2556495307942, 254.64689387916482, 256.4835490935692],
+                      imgsz_=[512, 512],
+                      dist_=[-0.05972430882700243, 0.17468739202093328, 0.000737218969875311, 0.000574074894976456],
+                      xi_=1.792187901303534)
+    cam1 = OmniCamera(intrin_=[520.2546241208013, 520.1799003708908, 252.24978846121377, 254.15045097300418],
+                      imgsz_=[512, 512],
+                      dist_=[-0.07693518083211431, 0.12590335598238764, 0.0016421936053305271, 0.0006230553630283544],
+                      xi_=1.7324175606483596)
+    print("cam0 opt matrix\n", cam0.P)
+    print("cam1 opt matrix\n", cam1.P)
 
     srcyaml = "/work/ORB_SLAM2/Examples/Stereo/EuRoC.yaml"
     dstyaml = "/work/ORB_SLAM2/Examples/Stereo/TUM_VI.yaml"
+    sample = "/work/scripts/calib_sample.png"
     yaml.add_constructor(u"tag:yaml.org,2002:opencv-matrix", opencv_matrix_constructor)
     yaml.add_representer(np.ndarray, opencv_matrix_representer)
+    convert_yaml(cam0, cam1, srcyaml, dstyaml)
 
-    baseline = 0.10106110275180535
+    test_undistortion(sample, cam0)
 
+
+def convert_yaml(cam0, cam1, srcyaml, dstyaml):
     with open(srcyaml, 'r') as fin:
+        firstline = fin.readline()
         data = yaml.load(fin)
-        data["Camera.fx"] = float(cam0_opt_mat[0, 0])
-        data["Camera.fy"] = float(cam0_opt_mat[1, 1])
-        data["Camera.cx"] = float(cam0_opt_mat[0, 2])
-        data["Camera.cy"] = float(cam0_opt_mat[1, 2])
-        data["Camera.width"] = img_size[0]
-        data["Camera.height"] = img_size[1]
-        data["Camera.bf"] = float(cam0_opt_mat[0, 0] * baseline)
+        data["Camera.fx"] = cam0.fx()
+        data["Camera.fy"] = cam0.fy()
+        data["Camera.cx"] = cam0.cx()
+        data["Camera.cy"] = cam0.cy()
+        data["Camera.width"] = cam0.width()
+        data["Camera.height"] = cam0.height()
+        data["Camera.bf"] = cam0.fx() * BASELINE
+        data["Omni"] = 1
 
-        data["LEFT.width"] = img_size[0]
-        data["LEFT.height"] = img_size[1]
-        print("shape", cam0_dist.shape, cam1_dist.shape, cam1_mat.shape)
-        data["LEFT.D"] = cam0_dist
-        data["LEFT.K"] = cam0_mat
-        data["LEFT.R"] = np.identity(3)
-        data["LEFT.P"] = cam0_opt_mat
-        
-        data["RIGHT.width"] = img_size[0]
-        data["RIGHT.height"] = img_size[1]
-        data["RIGHT.D"] = cam1_dist
-        data["RIGHT.K"] = cam1_mat
-        data["RIGHT.R"] = np.identity(3)
-        data["RIGHT.P"] = cam1_opt_mat
-        data["Fisheye"] = 1
+        data["LEFT.width"] = cam0.width()
+        data["LEFT.height"] = cam0.height()
+        data["LEFT.xi"] = cam0.xi
+        data["LEFT.D"] = cam0.D
+        data["LEFT.K"] = cam0.K
+        data["LEFT.R"] = cam0.R
+        data["LEFT.P"] = cam0.P
+
+        data["RIGHT.width"] = cam1.width()
+        data["RIGHT.height"] = cam1.height()
+        data["RIGHT.xi"] = cam1.xi
+        data["RIGHT.D"] = cam1.D
+        data["RIGHT.K"] = cam1.K
+        data["RIGHT.R"] = cam1.R
+        data["RIGHT.P"] = cam1.P
 
         with open(dstyaml, 'w') as fout:
+            fout.write(firstline)
             yaml.dump(data, fout)
 
 
-def get_opt_new_cam_mat(params, img_size):
-    cam_mat, cam_dist = parse_params_dso(params, img_size)
-    print("cam raw matrix\n", cam_mat)
-    cam_opt_mat, roi = cv2.getOptimalNewCameraMatrix(cameraMatrix=cam_mat, distCoeffs=cam_dist,
-                                                     imageSize=tuple(img_size), alpha=0)
-    # cam_opt_mat = np.concatenate([cam_opt_mat, np.zeros((3, 1))], axis=1)
-    return cam_mat, cam_dist, cam_opt_mat
-
-
-# params: fx fy cx cy k1 k2 r1 r2
-def parse_params_dso(params, img_size):
-    cam_mat = np.array([[params[0], 0, params[2]],
-                        [0, params[1], params[3]],
-                        [0, 0, 1]])
-    cam_mat[0] = cam_mat[0] * img_size[0]
-    cam_mat[1] = cam_mat[1] * img_size[1]
-    dist = params[4:]
-    # dist.append(0)
-    cam_dist = np.array([dist])
-    return cam_mat, cam_dist
+def test_undistortion(sample_file, cam0):
+    sample = cv2.imread(sample_file)
+    undist = np.zeros(tuple(cam0.imgsz))
+    undist = cv2.omnidir.undistortImage(sample, cam0.K, cam0.D, np.array(cam0.xi, dtype=np.double),
+                                        cv2.omnidir.RECTIFY_PERSPECTIVE, undist, cam0.P)
+    undist_file = op.join(op.dirname(sample_file), "sample_undist.png")
+    cv2.imwrite(undist_file, undist)
 
 
 # A yaml constructor is for loading from a yaml node.
