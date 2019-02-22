@@ -23,8 +23,8 @@ class OmniCamera:
         # rotation
         self.R = np.identity(3, dtype=np.double)
         # dst camera matrix
-        self.P = np.array([[imgsz_[0]/3.5, 0, imgsz_[0]/2],
-                          [0, imgsz_[1]/3.5, imgsz_[1]/2],
+        self.P = np.array([[imgsz_[0]/2, 0, imgsz_[0]/2],
+                          [0, imgsz_[1]/2, imgsz_[1]/2],
                           [0, 0, 1]], dtype=np.double)
 
     @staticmethod
@@ -68,7 +68,7 @@ def tum_vi():
     print("cam1 opt matrix\n", cam1.P)
 
     srcyaml = "/work/ORB_SLAM2/Examples/Stereo/EuRoC.yaml"
-    dstyaml = "/work/ORB_SLAM2/Examples/Stereo/TUM_VI.yaml"
+    dstyaml = "/work/ORB_SLAM2/Examples/Stereo/TumVI.yaml"
     sample = "/work/scripts/calib_sample.png"
     yaml.add_constructor(u"tag:yaml.org,2002:opencv-matrix", opencv_matrix_constructor)
     yaml.add_representer(np.ndarray, opencv_matrix_representer)

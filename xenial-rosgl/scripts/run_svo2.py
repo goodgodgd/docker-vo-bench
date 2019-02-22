@@ -53,6 +53,7 @@ class RunSVO2:
             outfile = cmd[-1]
             outfile = outfile.split("=")
             outfile = outfile[1]
+            print(op.dirname(outfile))
             os.makedirs(op.dirname(outfile), exist_ok=True)
 
             print("\n===== RUN SVO2 {}/{}\nconfig: {}\ncmd: {}\n"
@@ -62,9 +63,9 @@ class RunSVO2:
                 continue
 
             subprocess.Popen(cmd[1:])
-            time.sleep(5)
+            time.sleep(10)
             subprocess.run(["rosbag", "play", bagfile], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            time.sleep(3)
+            time.sleep(5)
             subprocess.run(["chmod", "-R", "a+rw", self.OUTPUT_ROOT])
             assert op.isfile(outfile), "===== ERROR: output file was NOT created: {}".format(outfile)
 
@@ -73,8 +74,9 @@ class RunSVO2:
     def euroc_mav(self, opt):
         dataset = "euroc_mav"
         dataset_path = op.join(self.DATA_ROOT, dataset, "bags")
-        launch_files = {"mvio": "euroc_mono_imu.launch", "stereo": "euroc_stereo.launch",
-                        "svio": "euroc_stereo_imu.launch"}
+        launch_files = {"mvio": "euroc_mono_imu.launch",
+                        "svio": "euroc_stereo_imu.launch",
+                        "stereo": "euroc_stereo.launch"}
         output_path = op.join(self.OUTPUT_ROOT, dataset)
         if not op.isdir(output_path):
             os.makedirs(output_path)

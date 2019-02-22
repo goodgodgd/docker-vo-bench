@@ -104,10 +104,11 @@ class RunORB2:
         return commands, configs
 
     # Usage:
-    # ./Examples/Monocular/mono_euroc Vocabulary/ORBvoc.txt \
-    #       Examples/Monocular/EuRoC.yaml \
+    # ./Examples/Stereo/streo_euroc Vocabulary/ORBvoc.txt \
+    #       Examples/Stereo/EuRoC.yaml \
     #       PATH_TO_SEQUENCE_FOLDER/mav0/cam0/data \
-    #       Examples/Monocular/EuRoC_TimeStamps/SEQUENCE.txt \
+    #       PATH_TO_SEQUENCE_FOLDER/mav0/cam1/data \
+    #       Examples/Stereo/EuRoC_TimeStamps/SEQUENCE.txt \
     #       loop_closing_on \
     #       path/to/output/file
     def stereo_euroc(self, opt):
@@ -124,15 +125,15 @@ class RunORB2:
         config_file = op.join(exec_path, "EuRoC.yaml")
         commands = []
         configs = []
-        for si, right_seq in enumerate(sequences):
+        for si, cam0_seq in enumerate(sequences):
             for test_id in self.TEST_IDS:
-                left_seq = right_seq.replace("cam0", "cam1")
-                timefile = right_seq.split("/")[-4]
+                cam1_seq = cam0_seq.replace("cam0", "cam1")
+                timefile = cam0_seq.split("/")[-4]
                 timefile = timefile.split("_")
                 timefile = op.join(exec_path, "EuRoC_TimeStamps", timefile[0] + timefile[1] + ".txt")
 
                 output_file = op.join(output_path, "{}_s{:02d}_{}.txt".format(outname, si, test_id))
-                cmd = [executer, self.VOCABULARY, config_file, right_seq, left_seq, timefile,
+                cmd = [executer, self.VOCABULARY, config_file, cam0_seq, cam1_seq, timefile,
                        str(opt.loopclosing), output_file]
                 commands.append(cmd)
                 conf = {"executer": outname, "loop closing": opt.loopclosing, "dataset": dataset,
