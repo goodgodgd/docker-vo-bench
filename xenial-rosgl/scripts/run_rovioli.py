@@ -65,6 +65,7 @@ class RunROVIOLI:
             subprocess.run(["chmod", "-R", "a+rw", self.OUTPUT_ROOT])
             assert op.isfile(outfile), "===== ERROR: output file was NOT created: {}".format(outfile)
             self.format_tum_and_savetxt(outfile)
+        subprocess.run(["pkill", "roscore"])
 
     @staticmethod
     def format_tum_and_savetxt(csvfile):

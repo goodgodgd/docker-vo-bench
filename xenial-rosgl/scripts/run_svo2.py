@@ -68,6 +68,7 @@ class RunSVO2:
             time.sleep(5)
             subprocess.run(["chmod", "-R", "a+rw", self.OUTPUT_ROOT])
             assert op.isfile(outfile), "===== ERROR: output file was NOT created: {}".format(outfile)
+        subprocess.run(["pkill", "roscore"])
 
     # Usage:
     # roslaunch svo_ros xxxxx.launch outfile:=/path/to/output
