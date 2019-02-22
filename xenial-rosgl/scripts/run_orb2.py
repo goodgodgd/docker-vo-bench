@@ -78,6 +78,7 @@ class RunORB2:
         sequences = [s for s in sequences if int(op.basename(s)) <= 10]
         if opt.seq_idx != -1:
             sequences = [sequences[opt.seq_idx]]
+        sequences.sort()
         outname = "orb2_vo_stereo" if opt.loopclosing == 0 else "orb2_slam_stereo"
 
         commands = []
@@ -120,6 +121,7 @@ class RunORB2:
         output_path = op.join(self.OUTPUT_ROOT, dataset)
         if opt.seq_idx != -1:
             sequences = [sequences[opt.seq_idx]]
+        sequences.sort()
         outname = "orb2_vo_stereo" if opt.loopclosing == 0 else "orb2_slam_stereo"
 
         config_file = op.join(exec_path, "EuRoC.yaml")

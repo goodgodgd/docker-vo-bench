@@ -83,6 +83,7 @@ class RunSVO2:
         sequences = glob.glob(dataset_path + "/*.bag")
         if opt.seq_idx != -1:
             sequences = [sequences[opt.seq_idx]]
+        sequences.sort()
         outprefix = "svo2"
 
         commands = []
