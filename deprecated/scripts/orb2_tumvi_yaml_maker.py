@@ -1,10 +1,13 @@
 import numpy as np
 import cv2
-import sys
 import yaml
 import os.path as op
 
+ORBPATH = "/home/ian/workspace/docker-vo/xenial-rosgl/ORB_SLAM2"
 BASELINE = 0.10096822449780929
+FL_SCALE = 2.8
+ROW_OFFSET = 13
+SCALE_TO8BIT = 180
 
 
 class OmniCamera:
@@ -23,8 +26,8 @@ class OmniCamera:
         # rotation
         self.R = np.identity(3, dtype=np.double)
         # dst camera matrix
-        self.P = np.array([[imgsz_[0]/2, 0, imgsz_[0]/2],
-                          [0, imgsz_[1]/2, imgsz_[1]/2],
+        self.P = np.array([[imgsz_[0]/FL_SCALE, 0, imgsz_[0]/2],
+                          [0, imgsz_[1]/FL_SCALE, imgsz_[1]/2],
                           [0, 0, 1]], dtype=np.double)
 
     @staticmethod
@@ -55,7 +58,6 @@ class OmniCamera:
 
 def tum_vi():
     cv2.ocl.setUseOpenCL(False)
-    sys.path.append("/usr/local/lib/python3.5/dist-packages/cv2")
     cam0 = OmniCamera(intrin_=[533.340727445877, 533.2556495307942, 254.64689387916482, 256.4835490935692],
                       imgsz_=[512, 512],
                       dist_=[-0.05972430882700243, 0.17468739202093328, 0.000737218969875311, 0.000574074894976456],
@@ -67,14 +69,15 @@ def tum_vi():
     print("cam0 opt matrix\n", cam0.P)
     print("cam1 opt matrix\n", cam1.P)
 
-    srcyaml = "/work/ORB_SLAM2/Examples/Stereo/EuRoC.yaml"
-    dstyaml = "/work/ORB_SLAM2/Examples/Stereo/TumVI.yaml"
-    sample = "/work/scripts/calib_sample.png"
+    srcyaml = op.join(ORBPATH, "Examples/Stereo/EuRoC.yaml")
+    dstyaml = op.join(ORBPATH, "Examples/Stereo/TumVI.yaml")
     yaml.add_constructor(u"tag:yaml.org,2002:opencv-matrix", opencv_matrix_constructor)
     yaml.add_representer(np.ndarray, opencv_matrix_representer)
     convert_yaml(cam0, cam1, srcyaml, dstyaml)
 
-    test_undistortion(sample, cam0)
+    sample = "calib.png"
+    sample_undist = "undistort.png"
+    test_undistortion(cam0, sample, sample_undist)
 
 
 def convert_yaml(cam0, cam1, srcyaml, dstyaml):
@@ -88,7 +91,6 @@ def convert_yaml(cam0, cam1, srcyaml, dstyaml):
         data["Camera.width"] = cam0.width()
         data["Camera.height"] = cam0.height()
         data["Camera.bf"] = cam0.fx() * BASELINE
-        data["Omni"] = 1
 
         data["LEFT.width"] = cam0.width()
         data["LEFT.height"] = cam0.height()
@@ -106,18 +108,32 @@ def convert_yaml(cam0, cam1, srcyaml, dstyaml):
         data["RIGHT.R"] = cam1.R
         data["RIGHT.P"] = cam1.P
 
+        # additional parameters
+        #   camera model: omni directional
+        data["Omni"] = 1
+        #   row difference: left row = right row + RowOffset
+        data["RowOffset"] = ROW_OFFSET
+        #   scaleto8bit: scale factor to 16bit pixel value (Tum VI dataset)
+        data["ScaleTo8bit"] = SCALE_TO8BIT
+
         with open(dstyaml, 'w') as fout:
             fout.write(firstline)
             yaml.dump(data, fout)
 
 
-def test_undistortion(sample_file, cam0):
-    sample = cv2.imread(sample_file)
+def test_undistortion(cam0, srcfile, dstfile):
+    sample = cv2.imread(srcfile, cv2.IMREAD_ANYDEPTH)
     undist = np.zeros(tuple(cam0.imgsz))
     undist = cv2.omnidir.undistortImage(sample, cam0.K, cam0.D, np.array(cam0.xi, dtype=np.double),
                                         cv2.omnidir.RECTIFY_PERSPECTIVE, undist, cam0.P)
-    undist_file = op.join(op.dirname(sample_file), "sample_undist.png")
-    cv2.imwrite(undist_file, undist)
+    cv2.imwrite(dstfile, undist)
+
+    scaled = (np.minimum(sample/SCALE_TO8BIT, 255)).astype(np.uint8)
+    disp = np.concatenate([sample, undist], axis=1)
+    print("sample datatype", sample.dtype, scaled.dtype)
+    cv2.imshow("undistorted", disp)
+    cv2.imshow("scaled", scaled)
+    cv2.waitKey()
 
 
 # A yaml constructor is for loading from a yaml node.

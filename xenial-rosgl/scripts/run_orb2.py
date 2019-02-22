@@ -28,7 +28,7 @@ class RunORB2:
 
     def generate_commands(self, opt):
         if opt.exec == "all":
-            command_makers = [self.stereo_euroc]
+            command_makers = [self.stereo_tumvi, self.stereo_euroc, self.stereo_kitti]
             commands = []
             configs = []
             for lc in [0, 1]:
@@ -41,6 +41,8 @@ class RunORB2:
             commands, configs = self.stereo_kitti(opt)
         elif opt.exec == "stereo_euroc":
             commands, configs = self.stereo_euroc(opt)
+        elif opt.exec == "stereo_tumvi":
+            commands, configs = self.stereo_tumvi(opt)
         else:
             raise FileNotFoundError()
 
@@ -144,12 +146,49 @@ class RunORB2:
             print("===== command:", " ".join(commands[-1]))
         return commands, configs
 
+    # Usage:
+    # ./Examples/Stereo/streo_euroc Vocabulary/ORBvoc.txt \
+    #       Examples/Stereo/TumVI.yaml \
+    #       PATH_TO_SEQUENCE_FOLDER/mav0/cam0/data \
+    #       PATH_TO_SEQUENCE_FOLDER/mav0/cam1/data \
+    #       Examples/Stereo/TumVI_TimeStamps/SEQUENCE.txt \
+    #       loop_closing_on \
+    #       path/to/output/file
+    def stereo_tumvi(self, opt):
+        exec_path = op.join(self.ORB2_ROOT, "Examples/Stereo")
+        executer = op.join(exec_path, "stereo_euroc")
+        dataset = "tum_vi"
+        dataset_path = op.join(self.DATA_ROOT, dataset)
+        sequences = [s + "mav0/cam0/data" for s in glob.glob(dataset_path + "/*/") if op.isdir(s+"mav0")]
+        output_path = op.join(self.OUTPUT_ROOT, dataset)
+        if opt.seq_idx != -1:
+            sequences = [sequences[opt.seq_idx]]
+        sequences.sort()
+        outname = "orb2_vo_stereo" if opt.loopclosing == 0 else "orb2_slam_stereo"
+
+        config_file = op.join(exec_path, "TumVI.yaml")
+        commands = []
+        configs = []
+        for si, cam0_seq in enumerate(sequences):
+            for test_id in self.TEST_IDS:
+                cam1_seq = cam0_seq.replace("cam0", "cam1")
+                timefile = cam0_seq.split("/")[-4]
+                timefile = op.join(exec_path, "TumVI_TimeStamps", timefile + ".txt")
+
+                output_file = op.join(output_path, "{}_s{:02d}_{}.txt".format(outname, si, test_id))
+                cmd = [executer, self.VOCABULARY, config_file, cam0_seq, cam1_seq, timefile,
+                       str(opt.loopclosing), output_file]
+                commands.append(cmd)
+                conf = {"executer": outname, "loop closing": opt.loopclosing, "dataset": dataset,
+                        "sequence": si, "test id": test_id}
+                configs.append(conf)
+            print("===== command:", " ".join(commands[-1]))
+        return commands, configs
+
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-e", "--exec", default="all", type=str, help="orbslam2 executer file, "
-                        "options: all, mono_tum, mono_kitti, mono_euroc, rgbd_tum"
-                        ", stereo_kitti, stereo_euroc")
+    parser.add_argument("-e", "--exec", default="all", type=str, help="orbslam2 executer")
     parser.add_argument("-l", "--loopclosing", default=0, type=int,
                         help="if 1, enable loop closing")
     parser.add_argument("-s", "--seq_idx", default=-1, type=int,
