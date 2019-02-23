@@ -3,20 +3,19 @@ import os.path as op
 import subprocess
 import argparse
 import glob
+import sequence_abbrev as sa
 
 
 class RunORB2:
-    def __init__(self):
+    def __init__(self, opt):
         self.ORB2_ROOT = "/work/ORB_SLAM2"
         self.VOCABULARY = self.ORB2_ROOT + "/Vocabulary/ORBvoc.txt"
         self.DATA_ROOT = "/data/dataset"
         self.OUTPUT_ROOT = "/data/output"
-        self.NUM_TEST = 5
-        self.TEST_IDS = None
+        self.TEST_IDS = list(range(opt.num_test))
 
     def run_orb2(self, opt):
         self.check_base_paths()
-        self.TEST_IDS = list(range(self.NUM_TEST)) if opt.test_id < 0 else [opt.test_id]
         commands, configs = self.generate_commands(opt)
         self.execute_commands(commands, configs)
 
@@ -130,18 +129,18 @@ class RunORB2:
         commands = []
         configs = []
         for si, cam0_seq in enumerate(sequences):
+            cam1_seq = cam0_seq.replace("cam0", "cam1")
+            timefile = cam0_seq.split("/")[-4]
+            timefile = timefile.split("_")
+            timefile = op.join(exec_path, "EuRoC_TimeStamps", timefile[0] + timefile[1] + ".txt")
+            seq_abbr = sa.euroc_abbrev(cam0_seq.split("/")[-4])
             for test_id in self.TEST_IDS:
-                cam1_seq = cam0_seq.replace("cam0", "cam1")
-                timefile = cam0_seq.split("/")[-4]
-                timefile = timefile.split("_")
-                timefile = op.join(exec_path, "EuRoC_TimeStamps", timefile[0] + timefile[1] + ".txt")
-
-                output_file = op.join(output_path, "{}_s{:02d}_{}.txt".format(outname, si, test_id))
+                output_file = op.join(output_path, "{}_{}_{}.txt".format(outname, seq_abbr, test_id))
                 cmd = [executer, self.VOCABULARY, config_file, cam0_seq, cam1_seq, timefile,
                        str(opt.loopclosing), output_file]
                 commands.append(cmd)
                 conf = {"executer": outname, "loop closing": opt.loopclosing, "dataset": dataset,
-                        "sequence": si, "test id": test_id}
+                        "sequence": seq_abbr, "test id": test_id}
                 configs.append(conf)
             print("===== command:", " ".join(commands[-1]))
         return commands, configs
@@ -170,17 +169,17 @@ class RunORB2:
         commands = []
         configs = []
         for si, cam0_seq in enumerate(sequences):
+            cam1_seq = cam0_seq.replace("cam0", "cam1")
+            timefile = cam0_seq.split("/")[-4]
+            timefile = op.join(exec_path, "TumVI_TimeStamps", timefile + ".txt")
+            seq_abbr = sa.tumvi_abbrev(cam0_seq.split("/")[-4])
             for test_id in self.TEST_IDS:
-                cam1_seq = cam0_seq.replace("cam0", "cam1")
-                timefile = cam0_seq.split("/")[-4]
-                timefile = op.join(exec_path, "TumVI_TimeStamps", timefile + ".txt")
-
-                output_file = op.join(output_path, "{}_s{:02d}_{}.txt".format(outname, si, test_id))
+                output_file = op.join(output_path, "{}_{}_{}.txt".format(outname, seq_abbr, test_id))
                 cmd = [executer, self.VOCABULARY, config_file, cam0_seq, cam1_seq, timefile,
                        str(opt.loopclosing), output_file]
                 commands.append(cmd)
                 conf = {"executer": outname, "loop closing": opt.loopclosing, "dataset": dataset,
-                        "sequence": si, "test id": test_id}
+                        "sequence": seq_abbr, "test id": test_id}
                 configs.append(conf)
             print("===== command:", " ".join(commands[-1]))
         return commands, configs
@@ -193,11 +192,12 @@ def main():
                         help="if 1, enable loop closing")
     parser.add_argument("-s", "--seq_idx", default=-1, type=int,
                         help="int: index of sequence in sequence list, -1 means all")
-    parser.add_argument("-t", "--test_id", default=-1, type=int, help="test id")
+    parser.add_argument("-t", "--num_test", default=5, type=int,
+                        help="number of tests per sequence")
     opt = parser.parse_args()
     print(opt)
 
-    orbslam2 = RunORB2()
+    orbslam2 = RunORB2(opt)
     orbslam2.run_orb2(opt)
 
 

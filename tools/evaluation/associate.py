@@ -68,6 +68,7 @@ def read_file_list(filename):
     list = [(float(l[0]),l[1:]) for l in list if len(l)>1]
     return dict(list)
 
+
 def associate(first_list, second_list,offset,max_difference):
     """
     Associate two dictionaries of (stamp,data). As the time stamps never match exactly, we aim 
@@ -100,6 +101,7 @@ def associate(first_list, second_list,offset,max_difference):
     matches.sort()
     return matches
 
+
 if __name__ == '__main__':
     
     # parse command line
@@ -124,5 +126,3 @@ if __name__ == '__main__':
     else:
         for a,b in matches:
             print("%f %s %f %s"%(a," ".join(first_list[a]),b-float(args.offset)," ".join(second_list[b])))
-            
-        

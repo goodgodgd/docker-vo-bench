@@ -6,21 +6,19 @@ import glob
 import time
 import pandas as pd
 import numpy as np
-import shutil
+import sequence_abbrev as sa
 
 
 class RunROVIOLI:
-    def __init__(self):
+    def __init__(self, opt):
         self.PKG_NAME = "rovioli"
         self.DATA_ROOT = "/data/dataset"
         self.OUTPUT_ROOT = "/data/output"
         self.TEMP_FILE = op.join(self.OUTPUT_ROOT, "rovlioli_temp.csv")
-        self.NUM_TEST = 5
-        self.TEST_IDS = None
+        self.TEST_IDS = list(range(opt.num_test))
 
     def run_rovioli(self, opt):
         self.check_base_paths()
-        self.TEST_IDS = list(range(self.NUM_TEST)) if opt.test_id < 0 else [opt.test_id]
         commands, configs = self.generate_commands(opt)
         self.execute_commands(commands, configs)
 
@@ -30,7 +28,7 @@ class RunROVIOLI:
 
     def generate_commands(self, opt):
         if opt.dataset == "all":
-            command_makers = [self.euroc_mav, self.tum_vi]
+            command_makers = [self.tum_vi, self.euroc_mav]
             commands = []
             configs = []
             for cmdmaker in command_makers:
@@ -80,6 +78,7 @@ class RunROVIOLI:
         assert data.shape[1] == 16, \
             "[ERROR] ROVIOLI saved file in wrong format, {}".format(data.shape)
         data = np.concatenate([np.expand_dims(data[:, 0], 1), data[:, 8:15]], axis=1)
+        print("format resulting poses to tum format and save to", outfile)
         np.savetxt(outfile, data, fmt="%1.6f")
         os.remove(self.TEMP_FILE)
 
@@ -103,9 +102,9 @@ class RunROVIOLI:
         commands = []
         configs = []
         for si, bagfile in enumerate(sequences):
+            seq_abbr = sa.euroc_abbrev(bagfile.split("/")[-1])
             for test_id in self.TEST_IDS:
-                output_file = op.join(output_path, "{}_s{:02d}_{}.txt".format(outname, si, test_id))
-
+                output_file = op.join(output_path, "{}_{}_{}.txt".format(outname, seq_abbr, test_id))
                 cmd = ["rosrun", self.PKG_NAME, node_name, bagfile, output_file]
                 commands.append(cmd)
                 conf = {"executer": outname, "dataset": dataset, "seq_name": op.basename(bagfile),
@@ -133,9 +132,9 @@ class RunROVIOLI:
         commands = []
         configs = []
         for si, bagfile in enumerate(sequences):
+            seq_abbr = sa.tumvi_abbrev(bagfile.split("/")[-1])
             for test_id in self.TEST_IDS:
-                output_file = op.join(output_path, "{}_s{:02d}_{}.txt".format(outname, si, test_id))
-
+                output_file = op.join(output_path, "{}_{}_{}.txt".format(outname, seq_abbr, test_id))
                 cmd = ["rosrun", self.PKG_NAME, node_name, bagfile, output_file]
                 commands.append(cmd)
                 conf = {"executer": outname, "dataset": dataset, "seq_name": op.basename(bagfile),
@@ -148,12 +147,12 @@ class RunROVIOLI:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--dataset", default="all", type=str, help="dataset name")
-    parser.add_argument("-t", "--test_id", default=-1, type=int, help="test id")
+    parser.add_argument("-t", "--num_test", default=5, type=int, help="number of tests per sequence")
     parser.add_argument("-s", "--seq_idx", default=-1, type=int,
                         help="int: index of sequence in sequence list, -1 means all")
     opt = parser.parse_args()
 
-    rovioli = RunROVIOLI()
+    rovioli = RunROVIOLI(opt)
     rovioli.run_rovioli(opt)
 
 

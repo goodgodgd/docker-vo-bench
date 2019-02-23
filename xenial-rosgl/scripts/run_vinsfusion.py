@@ -4,21 +4,20 @@ import subprocess
 import argparse
 import glob
 import time
+import sequence_abbrev as sa
 
 
 class RunVinsFusion:
-    def __init__(self):
+    def __init__(self, opt):
         self.PKG_NAME = "vins"
         self.NODE_NAME = "vins_node"
         self.CONFIG_DIR = "/work/vins_ws/src/vins-fusion/config"
         self.DATA_ROOT = "/data/dataset"
         self.OUTPUT_ROOT = "/data/output"
-        self.NUM_TEST = 5
-        self.TEST_IDS = None
+        self.TEST_IDS = list(range(opt.num_test))
 
     def run_vinsfusion(self, opt):
         self.check_base_paths()
-        self.TEST_IDS = list(range(self.NUM_TEST)) if opt.test_id < 0 else [opt.test_id]
         commands, configs = self.generate_commands(opt)
         self.execute_commands(commands, configs)
 
@@ -29,7 +28,7 @@ class RunVinsFusion:
 
     def generate_commands(self, opt):
         if opt.dataset == "all":
-            command_makers = [self.euroc_mav, self.tum_vi]
+            command_makers = [self.tum_vi, self.euroc_mav]
             commands = []
             configs = []
             for cmdmaker in command_makers:
@@ -98,13 +97,13 @@ class RunVinsFusion:
             for si, bagfile in enumerate(sequences):
                 outname = outprefix + "_" + suffix
                 config_file = op.join(config_path, conf_file)
+                seq_abbr = sa.euroc_abbrev(bagfile.split("/")[-1])
                 for test_id in self.TEST_IDS:
-                    output_file = op.join(output_path, "{}_s{:02d}_{}.txt".format(outname, si, test_id))
-
+                    output_file = op.join(output_path, "{}_{}_{}.txt".format(outname, seq_abbr, test_id))
                     cmd = [bagfile, "rosrun", self.PKG_NAME, self.NODE_NAME, config_file, output_file]
                     commands.append(cmd)
                     conf = {"executer": outname, "config": conf_file, "dataset": dataset,
-                            "seq_name": op.basename(bagfile), "seq_id": si, "test id": test_id}
+                            "seq_name": op.basename(bagfile), "seq_id": seq_abbr, "test id": test_id}
                     configs.append(conf)
                 print("===== command:", " ".join(commands[-1]))
         return commands, configs
@@ -135,13 +134,13 @@ class RunVinsFusion:
             for si, bagfile in enumerate(sequences):
                 outname = outprefix + "_" + suffix
                 config_file = op.join(config_path, conf_file)
+                seq_abbr = sa.tumvi_abbrev(bagfile.split("/")[-1])
                 for test_id in self.TEST_IDS:
-                    output_file = op.join(output_path, "{}_s{:02d}_{}.txt".format(outname, si, test_id))
-
+                    output_file = op.join(output_path, "{}_{}_{}.txt".format(outname, seq_abbr, test_id))
                     cmd = [bagfile, "rosrun", self.PKG_NAME, self.NODE_NAME, config_file, output_file]
                     commands.append(cmd)
                     conf = {"executer": outname, "config": conf_file, "dataset": dataset,
-                            "seq_name": op.basename(bagfile), "seq_id": si, "test id": test_id}
+                            "seq_name": op.basename(bagfile), "seq_id": seq_abbr, "test id": test_id}
                     configs.append(conf)
                 print("===== command:", " ".join(commands[-1]))
         return commands, configs
@@ -150,12 +149,12 @@ class RunVinsFusion:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--dataset", default="all", type=str, help="dataset name")
-    parser.add_argument("-t", "--test_id", default=-1, type=int, help="test id")
+    parser.add_argument("-t", "--num_test", default=5, type=int, help="number of tests per sequence")
     parser.add_argument("-s", "--seq_idx", default=-1, type=int,
                         help="int: index of sequence in sequence list, -1 means all")
     opt = parser.parse_args()
 
-    vins = RunVinsFusion()
+    vins = RunVinsFusion(opt)
     vins.run_vinsfusion(opt)
 
 

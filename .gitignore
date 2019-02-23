@@ -10,8 +10,9 @@ config.h
 output
 dataset
 things
-svo_install_ws
+define_paths.py
 .vscode
 .idea
 .catkin_tools
 __pycache__
+
