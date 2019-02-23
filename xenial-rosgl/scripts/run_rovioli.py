@@ -68,8 +68,8 @@ class RunROVIOLI:
             cmd[-1] = self.TEMP_FILE
             print("command", cmd)
             subprocess.run(cmd)
-            subprocess.run(["chmod", "-R", "a+rw", self.OUTPUT_ROOT])
             self.format_tum_and_savetxt(outfile)
+            subprocess.run(["chmod", "-R", "a+rw", self.OUTPUT_ROOT])
             assert op.isfile(outfile), "===== ERROR: output file was NOT created: {}".format(outfile)
 
         subprocess.run(["pkill", "roscore"])
@@ -77,7 +77,7 @@ class RunROVIOLI:
     def format_tum_and_savetxt(self, outfile):
         data = pd.read_csv(self.TEMP_FILE)
         data = data.values
-        assert data.shape[1] == 8, \
+        assert data.shape[1] == 16, \
             "[ERROR] ROVIOLI saved file in wrong format, {}".format(data.shape)
         data = np.concatenate([np.expand_dims(data[:, 0], 1), data[:, 8:15]], axis=1)
         np.savetxt(outfile, data, fmt="%1.6f")

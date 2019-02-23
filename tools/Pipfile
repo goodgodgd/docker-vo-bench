@@ -9,6 +9,7 @@ verify_ssl = true
 opencv-python = "*"
 opencv-contrib-python = "*"
 pyyaml = "*"
+pandas = "*"
 
 [requires]
 python_version = "3.6"
