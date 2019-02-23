@@ -29,15 +29,17 @@ class RunVinsFusion:
 
     def generate_commands(self, opt):
         if opt.dataset == "all":
-            command_makers = [self.euroc_mav]
+            command_makers = [self.euroc_mav, self.tum_vi]
             commands = []
             configs = []
             for cmdmaker in command_makers:
                 cmds, cfgs = cmdmaker(opt)
                 commands.extend(cmds)
                 configs.extend(cfgs)
-        elif opt.dataset == "euroc_mav":
+        elif opt.dataset == "euroc":
             commands, configs = self.euroc_mav(opt)
+        elif opt.dataset == "tumvi":
+            commands, configs = self.tum_vi(opt)
         else:
             raise FileNotFoundError()
 
@@ -78,8 +80,46 @@ class RunVinsFusion:
         dataset = "euroc_mav"
         dataset_path = op.join(self.DATA_ROOT, dataset, "bags")
         config_path = op.join(self.CONFIG_DIR, "euroc")
-        config_files = {"mvio": "euroc_mono_imu_config.yaml", "stereo": "euroc_stereo_config.yaml",
+        config_files = {"mvio": "euroc_mono_imu_config.yaml",
+                        "stereo": "euroc_stereo_config.yaml",
                         "svio": "euroc_stereo_imu_config.yaml"}
+        output_path = op.join(self.OUTPUT_ROOT, dataset)
+        if not op.isdir(output_path):
+            os.makedirs(output_path)
+        sequences = glob.glob(dataset_path + "/*.bag")
+        if opt.seq_idx != -1:
+            sequences = [sequences[opt.seq_idx]]
+        sequences.sort()
+        outprefix = "vinsfs"
+
+        commands = []
+        configs = []
+        for suffix, conf_file in config_files.items():
+            for si, bagfile in enumerate(sequences):
+                outname = outprefix + "_" + suffix
+                config_file = op.join(config_path, conf_file)
+                for test_id in self.TEST_IDS:
+                    output_file = op.join(output_path, "{}_s{:02d}_{}.txt".format(outname, si, test_id))
+
+                    cmd = [bagfile, "rosrun", self.PKG_NAME, self.NODE_NAME, config_file, output_file]
+                    commands.append(cmd)
+                    conf = {"executer": outname, "config": conf_file, "dataset": dataset,
+                            "seq_name": op.basename(bagfile), "seq_id": si, "test id": test_id}
+                    configs.append(conf)
+                print("===== command:", " ".join(commands[-1]))
+        return commands, configs
+
+    # Usage:
+    # rosrun vins vins_node
+    #       /path/to/xxx_config.yaml
+    #       /path/to/outfile
+    def tum_vi(self, opt):
+        dataset = "tum_vi"
+        dataset_path = op.join(self.DATA_ROOT, dataset, "bags")
+        config_path = op.join(self.CONFIG_DIR, "tumvi512")
+        config_files = {"mvio": "tumvi_mono_imu_config.yaml",
+                        "stereo": "tumvi_stereo_config.yaml",
+                        "svio": "tumvi_stereo_imu_config.yaml"}
         output_path = op.join(self.OUTPUT_ROOT, dataset)
         if not op.isdir(output_path):
             os.makedirs(output_path)

@@ -6,6 +6,7 @@ import glob
 import time
 import pandas as pd
 import numpy as np
+import shutil
 
 
 class RunROVIOLI:
@@ -13,6 +14,7 @@ class RunROVIOLI:
         self.PKG_NAME = "rovioli"
         self.DATA_ROOT = "/data/dataset"
         self.OUTPUT_ROOT = "/data/output"
+        self.TEMP_FILE = op.join(self.OUTPUT_ROOT, "rovlioli_temp.csv")
         self.NUM_TEST = 5
         self.TEST_IDS = None
 
@@ -35,8 +37,10 @@ class RunROVIOLI:
                 cmds, cfgs = cmdmaker(opt)
                 commands.extend(cmds)
                 configs.extend(cfgs)
-        elif opt.dataset == "euroc_mav":
+        elif opt.dataset == "euroc":
             commands, configs = self.euroc_mav(opt)
+        elif opt.dataset == "tumvi":
+            commands, configs = self.tum_vi(opt)
         else:
             raise FileNotFoundError()
 
@@ -56,26 +60,28 @@ class RunROVIOLI:
 
             print("\n===== RUN ROVIOLI {}/{}\nconfig: {}\ncmd: {}\n"
                   .format(ci+1, len(commands), cfg, cmd))
-            txtfile = outfile.replace(".csv", ".txt")
-            if op.isfile(txtfile):
+            if op.isfile(outfile):
                 print("This config has already executed, skip it ....")
                 continue
 
+            # save result on temp file in realtime
+            cmd[-1] = self.TEMP_FILE
+            print("command", cmd)
             subprocess.run(cmd)
             subprocess.run(["chmod", "-R", "a+rw", self.OUTPUT_ROOT])
-            assert op.isfile(outfile), "===== ERROR: output file was NOT created: {}".format(outfile)
             self.format_tum_and_savetxt(outfile)
+            assert op.isfile(outfile), "===== ERROR: output file was NOT created: {}".format(outfile)
+
         subprocess.run(["pkill", "roscore"])
 
-    @staticmethod
-    def format_tum_and_savetxt(csvfile):
-        data = pd.read_csv(csvfile)
+    def format_tum_and_savetxt(self, outfile):
+        data = pd.read_csv(self.TEMP_FILE)
         data = data.values
-        os.remove(csvfile)
-        if data.shape[1] > 8:
-            data = np.concatenate([np.expand_dims(data[:, 0], 1), data[:, 8:15]], axis=1)
-            txtfile = csvfile.replace(".csv", ".txt")
-            np.savetxt(txtfile, data, fmt="%1.6f")
+        assert data.shape[1] == 8, \
+            "[ERROR] ROVIOLI saved file in wrong format, {}".format(data.shape)
+        data = np.concatenate([np.expand_dims(data[:, 0], 1), data[:, 8:15]], axis=1)
+        np.savetxt(outfile, data, fmt="%1.6f")
+        os.remove(self.TEMP_FILE)
 
     # Usage:
     # rosrun rovioli run_rovioli_scratch
@@ -128,7 +134,7 @@ class RunROVIOLI:
         configs = []
         for si, bagfile in enumerate(sequences):
             for test_id in self.TEST_IDS:
-                output_file = op.join(output_path, "{}_s{:02d}_{}.csv".format(outname, si, test_id))
+                output_file = op.join(output_path, "{}_s{:02d}_{}.txt".format(outname, si, test_id))
 
                 cmd = ["rosrun", self.PKG_NAME, node_name, bagfile, output_file]
                 commands.append(cmd)
