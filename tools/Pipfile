@@ -10,6 +10,9 @@ opencv-python = "*"
 opencv-contrib-python = "*"
 pyyaml = "*"
 pandas = "*"
+matplotlib = "*"
+pyqt5 = "*"
+pyquaternion = "*"
 
 [requires]
 python_version = "3.6"
