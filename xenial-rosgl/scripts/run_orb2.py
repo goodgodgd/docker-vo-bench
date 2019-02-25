@@ -11,7 +11,7 @@ class RunORB2:
         self.ORB2_ROOT = "/work/ORB_SLAM2"
         self.VOCABULARY = self.ORB2_ROOT + "/Vocabulary/ORBvoc.txt"
         self.DATA_ROOT = "/data/dataset"
-        self.OUTPUT_ROOT = "/data/output"
+        self.OUTPUT_ROOT = "/data/output/pose"
         self.TEST_IDS = list(range(opt.num_test))
 
     def run_orb2(self, opt):
@@ -30,7 +30,7 @@ class RunORB2:
             command_makers = [self.stereo_tumvi, self.stereo_euroc, self.stereo_kitti]
             commands = []
             configs = []
-            for lc in [0, 1]:
+            for lc in [0]:
                 opt.loopclosing = lc
                 for cmdmaker in command_makers:
                     cmds, cfgs = cmdmaker(opt)

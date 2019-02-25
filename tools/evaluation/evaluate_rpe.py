@@ -72,6 +72,7 @@ def read_trajectory(filename, matrix=True, traj_gt_keys_sorted = []):
         if isnan:
             sys.stderr.write("Warning: line %d of file '%s' has NaNs, skipping line\n"%(i,filename))
             continue
+        l = check_and_normalize_quat(l)
         list_ok.append(l)
     if matrix :
       #if (len(traj_gt_keys_sorted)>0):
@@ -81,6 +82,18 @@ def read_trajectory(filename, matrix=True, traj_gt_keys_sorted = []):
     else:
         traj = dict([(l[0],l[1:8]) for l in list_ok])
     return traj
+
+
+def check_and_normalize_quat(vec):
+    quat = numpy.array(vec[4:8])
+    norm = numpy.linalg.norm(quat)
+    assert (numpy.abs(norm - 1.0) < 1.0E-3), "invalid quaternion: {}".format(quat)
+    if numpy.abs(norm - 1.0) > 1.0E-3:
+        print("[WARNING] read_trajectory: error in quaterion: {}".format(quat))
+    quat = quat/norm
+    for i in range(4):
+        vec[i+4] = quat[i]
+    return vec
 
 
 def find_closest_index(L,t):

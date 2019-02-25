@@ -13,7 +13,7 @@ class RunROVIOLI:
     def __init__(self, opt):
         self.PKG_NAME = "rovioli"
         self.DATA_ROOT = "/data/dataset"
-        self.OUTPUT_ROOT = "/data/output"
+        self.OUTPUT_ROOT = "/data/output/pose"
         self.TEMP_FILE = op.join(self.OUTPUT_ROOT, "rovlioli_temp.csv")
         self.TEST_IDS = list(range(opt.num_test))
 
@@ -32,13 +32,13 @@ class RunROVIOLI:
             commands = []
             configs = []
             for cmdmaker in command_makers:
-                cmds, cfgs = cmdmaker(opt)
+                cmds, cfgs = cmdmaker(opt.seq_idx)
                 commands.extend(cmds)
                 configs.extend(cfgs)
         elif opt.dataset == "euroc":
-            commands, configs = self.euroc_mav(opt)
+            commands, configs = self.euroc_mav(opt.seq_idx)
         elif opt.dataset == "tumvi":
-            commands, configs = self.tum_vi(opt)
+            commands, configs = self.tum_vi(opt.seq_idx)
         else:
             raise FileNotFoundError()
 
@@ -82,57 +82,35 @@ class RunROVIOLI:
         np.savetxt(outfile, data, fmt="%1.6f")
         os.remove(self.TEMP_FILE)
 
+    def euroc_mav(self, seq_idx):
+        node_name = "run_rovioli_euroc_vo"
+        dataset = "euroc_mav"
+        return self.create_commands(node_name, dataset, seq_idx)
+
+    def tum_vi(self, seq_idx):
+        node_name = "run_rovioli_tumvi_vo"
+        dataset = "tum_vi"
+        return self.create_commands(node_name, dataset, seq_idx)
+
     # Usage:
     # rosrun rovioli run_rovioli_scratch
     #       /path/to/dataset/MH_01_easy.bag
     #       output_file
-    def euroc_mav(self, opt):
-        node_name = "run_rovioli_euroc_vo"
-        dataset = "euroc_mav"
+    def create_commands(self, node_name, dataset, seq_idx: int):
         dataset_path = op.join(self.DATA_ROOT, dataset, "bags")
         output_path = op.join(self.OUTPUT_ROOT, dataset)
         if not op.isdir(output_path):
             os.makedirs(output_path)
         sequences = glob.glob(dataset_path + "/*.bag")
-        if opt.seq_idx != -1:
-            sequences = [sequences[opt.seq_idx]]
+        if seq_idx != -1:
+            sequences = [sequences[seq_idx]]
         sequences.sort()
         outname = "rovioli_mvio"
 
         commands = []
         configs = []
         for si, bagfile in enumerate(sequences):
-            seq_abbr = sa.euroc_abbrev(bagfile.split("/")[-1])
-            for test_id in self.TEST_IDS:
-                output_file = op.join(output_path, "{}_{}_{}.txt".format(outname, seq_abbr, test_id))
-                cmd = ["rosrun", self.PKG_NAME, node_name, bagfile, output_file]
-                commands.append(cmd)
-                conf = {"executer": outname, "dataset": dataset, "seq_name": op.basename(bagfile),
-                        "seq_id": si, "test_id": test_id}
-                configs.append(conf)
-            print("===== command:", " ".join(commands[-1]))
-        return commands, configs
-
-    # Usage:
-    # rosrun rovioli run_rovioli_scratch
-    #       /path/to/dataset/MH_01_easy.bag
-    #       output_file
-    def tum_vi(self, opt):
-        node_name = "run_rovioli_tumvi_vo"
-        dataset = "tum_vi"
-        dataset_path = op.join(self.DATA_ROOT, dataset, "bags")
-        output_path = op.join(self.OUTPUT_ROOT, dataset)
-        if not op.isdir(output_path):
-            os.makedirs(output_path)
-        sequences = glob.glob(dataset_path + "/*.bag")
-        if opt.seq_idx != -1:
-            sequences = [sequences[opt.seq_idx]]
-        outname = "rovioli_mvio"
-
-        commands = []
-        configs = []
-        for si, bagfile in enumerate(sequences):
-            seq_abbr = sa.tumvi_abbrev(bagfile.split("/")[-1])
+            seq_abbr = sa.sequence_abbrev(dataset, bagfile.split("/")[-1])
             for test_id in self.TEST_IDS:
                 output_file = op.join(output_path, "{}_{}_{}.txt".format(outname, seq_abbr, test_id))
                 cmd = ["rosrun", self.PKG_NAME, node_name, bagfile, output_file]

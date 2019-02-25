@@ -237,8 +237,6 @@ def evaluate_ate(first_file, second_file, offset=0.0, scale=1.0, max_difference=
 
     matches = associate.associate(first_list, second_list, float(offset),
                                   float(max_difference))
-    print("[ATE] gt len, esti len, matches", len(first_list.keys()), len(second_list.keys()), len(matches))
-    print("est poses", second_list[1403636624.763556], "\n", second_list[1403636634.763556])
 
     if len(matches) < 2:
         sys.exit("Couldn't find matching timestamp pairs between groundtruth and "
@@ -265,7 +263,7 @@ def evaluate_ate(first_file, second_file, offset=0.0, scale=1.0, max_difference=
          second_stamps]).transpose()
     second_xyz_full_aligned = rot * second_xyz_full + trans
 
-    association = ["%f %f %f %f %f %f %f %f" % (a, x1, y1, z1, b, x2, y2, z2)
+    association = [[a, x1, y1, z1, b, x2, y2, z2]
                    for (a, b), (x1, y1, z1), (x2, y2, z2) in
                    zip(matches, first_xyz.transpose().A,
                        second_xyz_aligned.transpose().A)]
@@ -286,7 +284,7 @@ def evaluate_ate(first_file, second_file, offset=0.0, scale=1.0, max_difference=
 
     if save_associations:
         file = open(save_associations, "w")
-        file.write("\n".join(association))
+        file.write("\n".join([" ".join(map(str, line)) for line in association]))
         file.close()
 
     if save:
@@ -306,6 +304,7 @@ def evaluate_ate(first_file, second_file, offset=0.0, scale=1.0, max_difference=
                second_stamps, second_xyz_aligned, second_xyz_full_aligned,
                matches, plot3D)
 
+    association = numpy.array(association, dtype=numpy.float64)
     return rot, trans, trans_error, association, gt_tstamps
 
 

@@ -23,7 +23,7 @@ def transform44(l):
     if nq < _EPS:
         print("eps", _EPS, nq)
         matrix = np.identity(4)
-        matrix[:3, 3] = np.array(t, dtype=np.float64).reshape((3,1))
+        matrix[:3, 3] = np.array(t, dtype=np.float64)
         return matrix
 
     q *= np.sqrt(1.0 / nq)

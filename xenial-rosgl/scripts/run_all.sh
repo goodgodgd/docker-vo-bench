@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 DATASET="all"
-NUM_TEST=2
+NUM_TEST=1
 
 source /work/maplab_ws/devel/setup.bash
 python3 run_rovioli.py -d $DATASET -t $NUM_TEST

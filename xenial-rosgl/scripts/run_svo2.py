@@ -11,7 +11,7 @@ class RunSVO2:
     def __init__(self, opt):
         self.PKG_NAME = "svo_ros"
         self.DATA_ROOT = "/data/dataset"
-        self.OUTPUT_ROOT = "/data/output"
+        self.OUTPUT_ROOT = "/data/output/pose"
         self.TEST_IDS = list(range(opt.num_test))
 
     def run_svo2(self, opt):
@@ -29,13 +29,13 @@ class RunSVO2:
             commands = []
             configs = []
             for cmdmaker in command_makers:
-                cmds, cfgs = cmdmaker(opt)
+                cmds, cfgs = cmdmaker(opt.seq_idx)
                 commands.extend(cmds)
                 configs.extend(cfgs)
         elif opt.dataset == "euroc":
-            commands, configs = self.euroc_mav(opt)
+            commands, configs = self.euroc_mav(opt.seq_idx)
         elif opt.dataset == "tumvi":
-            commands, configs = self.tum_vi(opt)
+            commands, configs = self.tum_vi(opt.seq_idx)
         else:
             raise FileNotFoundError()
 
@@ -66,58 +66,35 @@ class RunSVO2:
             time.sleep(10)
             subprocess.run(["rosbag", "play", bagfile],
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            time.sleep(5)
+            time.sleep(10)
             subprocess.run(["chmod", "-R", "a+rw", self.OUTPUT_ROOT])
             assert op.isfile(outfile), "===== ERROR: output file was NOT created: {}".format(outfile)
         subprocess.run(["pkill", "roscore"])
 
-    # Usage:
-    # roslaunch svo_ros xxxxx.launch outfile:=/path/to/output
-    def euroc_mav(self, opt):
+    def euroc_mav(self, seq_idx):
         dataset = "euroc_mav"
-        dataset_path = op.join(self.DATA_ROOT, dataset, "bags")
         launch_files = {"mvio": "euroc_mono_imu.launch",
                         "svio": "euroc_stereo_imu.launch",
                         "stereo": "euroc_stereo.launch"}
-        output_path = op.join(self.OUTPUT_ROOT, dataset)
-        if not op.isdir(output_path):
-            os.makedirs(output_path)
-        sequences = glob.glob(dataset_path + "/*.bag")
-        if opt.seq_idx != -1:
-            sequences = [sequences[opt.seq_idx]]
-        sequences.sort()
-        outprefix = "svo2"
+        return self.create_commands(dataset, launch_files, seq_idx)
 
-        commands = []
-        configs = []
-        for suffix, launch in launch_files.items():
-            for si, bagfile in enumerate(sequences):
-                outname = outprefix + "_" + suffix
-                seq_abbr = sa.euroc_abbrev(bagfile.split("/")[-1])
-                for test_id in self.TEST_IDS:
-                    output_file = op.join(output_path, "{}_{}_{}.txt".format(outname, seq_abbr, test_id))
-                    cmd = [bagfile, "roslaunch", self.PKG_NAME, launch, "outfile:=" + output_file]
-                    commands.append(cmd)
-                    conf = {"executer": outname, "launch": launch, "dataset": dataset,
-                            "seq_name": op.basename(bagfile), "seq_id": si, "test id": test_id}
-                    configs.append(conf)
-                print("===== command:", " ".join(commands[-1]))
-        return commands, configs
-
-    # Usage:
-    # roslaunch svo_ros xxxxx.launch outfile:=/path/to/output
-    def tum_vi(self, opt):
+    def tum_vi(self, seq_idx):
         dataset = "tum_vi"
-        dataset_path = op.join(self.DATA_ROOT, dataset, "bags")
         launch_files = {"mvio": "tumvi_mono_imu.launch",
                         "svio": "tumvi_stereo_imu.launch",
                         "stereo": "tumvi_stereo.launch"}
+        return self.create_commands(dataset, launch_files, seq_idx)
+
+    # Usage:
+    # roslaunch svo_ros xxxxx.launch outfile:=/path/to/output
+    def create_commands(self, dataset, launch_files, seq_idx: int):
+        dataset_path = op.join(self.DATA_ROOT, dataset, "bags")
         output_path = op.join(self.OUTPUT_ROOT, dataset)
         if not op.isdir(output_path):
             os.makedirs(output_path)
         sequences = glob.glob(dataset_path + "/*.bag")
-        if opt.seq_idx != -1:
-            sequences = [sequences[opt.seq_idx]]
+        if seq_idx != -1:
+            sequences = [sequences[seq_idx]]
         sequences.sort()
         outprefix = "svo2"
 
@@ -126,13 +103,16 @@ class RunSVO2:
         for suffix, launch in launch_files.items():
             for si, bagfile in enumerate(sequences):
                 outname = outprefix + "_" + suffix
-                seq_abbr = sa.tumvi_abbrev(bagfile.split("/")[-1])
+                seq_abbr = sa.sequence_abbrev(dataset, bagfile.split("/")[-1])
                 for test_id in self.TEST_IDS:
-                    output_file = op.join(output_path, "{}_{}_{}.txt".format(outname, seq_abbr, test_id))
-                    cmd = [bagfile, "roslaunch", self.PKG_NAME, launch, "outfile:=" + output_file]
+                    output_file = op.join(output_path,
+                                          "{}_{}_{}.txt".format(outname, seq_abbr, test_id))
+                    cmd = [bagfile, "roslaunch", self.PKG_NAME, launch,
+                           "outfile:=" + output_file]
                     commands.append(cmd)
                     conf = {"executer": outname, "launch": launch, "dataset": dataset,
-                            "seq_name": op.basename(bagfile), "seq_id": si, "test id": test_id}
+                            "seq_name": op.basename(bagfile), "seq_id": si,
+                            "test id": test_id}
                     configs.append(conf)
                 print("===== command:", " ".join(commands[-1]))
         return commands, configs

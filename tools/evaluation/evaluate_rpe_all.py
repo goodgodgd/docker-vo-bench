@@ -7,30 +7,60 @@ import glob
 import settings
 from define_paths import *
 import evaluation.evaluate_rpe as rpe
+import evaluation.eval_common as ec
 
-ALGORITHMS = ["orb2_vo_stereo", "rovioli_mvio",
-              "vinsfs_mvio", "vinsfs_svio", "vinsfs_stereo",
-              "svo2_mvio", "svo2_svio", "svo2_stereo"]
 NUM_TEST = 2
 MAX_TIME_DIFF = 0.5
 
 
-def evaluate_rpe_all(dataset):
-    estim_path = op.join(OUTPUT_PATH, dataset)
-    gtruth_path = op.join(OUTPUT_PATH, "ground_truth", dataset)
-    result_path = op.join(OUTPUT_PATH, "eval_files", "rpe", dataset)
-    assert op.isdir(estim_path), "No pose output directory: " + estim_path
-    assert op.isdir(gtruth_path), "No ground truth directory: " + gtruth_path
-    os.makedirs(result_path, exist_ok=True)
+def test_func(traj_gt, traj_est):
+    print("\n##### Test function for evaluating RPE, this is a temporary function")
+    Tmat = np.array([[0.96312,  0.26533, -0.04472, 4.75571],
+                     [-0.26654, 0.96354, -0.02358, -1.84965],
+                     [0.03683, 0.03463, 0.99872, 1.0102],
+                     [0, 0, 0, 1]], dtype=np.float64)
 
-    sequences = list_sequences(gtruth_path)
+    print("transform between gt and est in MH01\n", Tmat)
+    est_times = list(traj_est.keys())
+    gt_times = list(traj_gt.keys())
+    esttime = est_times[len(est_times)//2]
+    gttime = 0
+    for gt in gt_times:
+        if np.abs(gt - esttime) < 0.001:
+            gttime = gt
+            break
+    gtpose = traj_gt[gttime]
+    estpose = traj_est[esttime]
+    print("compare time", gttime, esttime)
+    print("gt pose \n{} \nest pose \n{}\n".format(gtpose, estpose))
+
+    estpose_aligned = np.dot(Tmat, estpose)
+    print("aligned est pose \n{}".format(estpose_aligned))
+
+
+def evaluate_rpe_all(dataset):
+    estim_path = op.join(OUTPUT_PATH, "pose", dataset)
+    gtbody_path = op.join(OUTPUT_PATH, "ground_truth", dataset + "_body")
+    gtcam_path = op.join(OUTPUT_PATH, "ground_truth", dataset + "_camera")
+    result_path = op.join(OUTPUT_PATH, "eval_result", "rpe", dataset)
+    assert op.isdir(estim_path), "No pose output directory: " + estim_path
+    assert op.isdir(gtbody_path), "No ground truth directory: " + gtbody_path
+    assert op.isdir(gtcam_path), "No ground truth directory: " + gtcam_path
+    os.makedirs(result_path, exist_ok=True)
+    ec.clear_files(result_path)
+
+    sequences = ec.list_sequences(gtbody_path)
 
     statis_results = {}
     rawerr_results = {}
-    for algo_name in ALGORITHMS:
+    for algo_name in ec.ALGORITHMS:
         stat_result = []
         raw_result = []
         print("\n===== algorithm: {} =====".format(algo_name))
+        if "ORB" in algo_name:
+            gtruth_path = gtcam_path
+        else:
+            gtruth_path = gtbody_path
 
         for seq_name in sequences:
             for test_id in range(NUM_TEST):
@@ -40,15 +70,18 @@ def evaluate_rpe_all(dataset):
                 if not op.isfile(estim_file):
                     continue
 
-                print("gt, est file", op.basename(gtruth_file), op.basename(estim_file))
+                print("gt, est file:", op.basename(gtruth_file), op.basename(estim_file))
                 traj_gt = rpe.read_trajectory(gtruth_file)
                 traj_est = rpe.read_trajectory(estim_file)
                 # for time, pose in traj_est.items():
                 #     traj_est[time] = np.linalg.inv(pose)
                 traj_est = remove_zero_frames(traj_est)
 
-                print("compute rpe", algo_name, seq_name, test_id)
+                # test_func(traj_gt, traj_est)
+
+                # main function
                 rpe_result = compute_rpe(traj_gt, traj_est, 10)
+
                 stats = calc_statistics(rpe_result, list(traj_gt.keys()))
                 seq_result = [seq_name, test_id, *stats]
                 stat_result.append(seq_result)
@@ -61,16 +94,8 @@ def evaluate_rpe_all(dataset):
             rawerr_results[algo_name] = np.concatenate(raw_result, axis=0)
             print("raw errors shape:", rawerr_results[algo_name].shape)
 
-    save_results(statis_results, rawerr_results, result_path)
-    collect_fields_and_save(statis_results, ["te_mean", "re_mean", "track_ratio"], result_path)
-
-
-def list_sequences(gtruth_path):
-    gtfiles = glob.glob(gtruth_path + "/*")
-    seq_abbr = [abbr.split("/")[-1][:-4] for abbr in gtfiles]
-    seq_abbr.sort()
-    print("sequences:", seq_abbr)
-    return seq_abbr
+    ec.save_results(statis_results, rawerr_results, result_path)
+    ec.collect_fields_and_save(statis_results, ["te_mean", "re_mean", "track_ratio"], result_path)
 
 
 def compute_rpe(traj_gt, traj_est, time_delta):
@@ -88,11 +113,11 @@ def compute_rpe(traj_gt, traj_est, time_delta):
 
 
 def remove_zero_frames(traj_est):
-    timestamps = list(traj_est.keys())
-    timestamps.sort()
+    est_times = list(traj_est.keys())
+    est_times.sort()
 
     # remove default poses
-    for time in timestamps:
+    for time in est_times:
         pose = traj_est[time]
         posit_sq = np.linalg.norm(pose[0, 0:3])
         if posit_sq < 1.0E-9:
@@ -100,7 +125,7 @@ def remove_zero_frames(traj_est):
             del traj_est[time]
 
     # remove stopping poses
-    for time, time_bef in zip(timestamps[1:], timestamps[:-1]):
+    for time, time_bef in zip(est_times[1:], est_times[:-1]):
         if time in traj_est.keys() and time_bef in traj_est.keys():
             pose = traj_est[time]
             pose_bef = traj_est[time_bef]
@@ -123,17 +148,11 @@ def calc_statistics(rpe_result, gt_times):
     stats = [np.mean(te), np.std(te), np.min(te), np.max(te), np.median(te), 
              np.mean(re), np.std(re), np.min(re), np.max(re), np.median(re)]
 
-    total_seconds = accumulate_connected_time(gt_times, max_diff=MAX_TIME_DIFF)
-    track_seconds = accumulate_connected_time(rpe_result["time_est_0"], max_diff=MAX_TIME_DIFF)
+    total_seconds = ec.accumulate_connected_time(gt_times, max_diff=MAX_TIME_DIFF)
+    track_seconds = ec.accumulate_connected_time(rpe_result["time_est_0"], max_diff=MAX_TIME_DIFF)
     track_ratio = track_seconds / total_seconds
     stats.extend([total_seconds, track_seconds, track_ratio])
     return stats
-
-
-def accumulate_connected_time(timestamps, max_diff):
-    time_diff = np.array(timestamps[1:]) - np.array(timestamps[:-1])
-    time_diff = time_diff[time_diff < max_diff]
-    return np.sum(time_diff)
 
 
 def get_column_names():
@@ -143,43 +162,10 @@ def get_column_names():
             "total_seconds", "track_seconds", "track_ratio"]
 
 
-def save_results(total_results, total_errors, save_path):
-    for algo_name, result in total_results.items():
-        filename = op.join(save_path, "rpe_{}_summary.csv".format(algo_name))
-        print("save", op.basename(filename))
-        result.to_csv(filename, encoding="utf-8", float_format="%1.6f")
-
-    for algo_name, result in total_errors.items():
-        filename = op.join(save_path, "rpe_{}_error.txt".format(algo_name))
-        print("save", op.basename(filename))
-        np.savetxt(filename, result, fmt="%1.6f")
-
-
-def collect_fields_and_save(statis_results, fields, save_path):
-    for fname in fields:
-        columns = []
-        field_data_merged = None
-        for algo_name, result in statis_results.items():
-            columns.append(algo_name)
-            field_data = result[["sequence", "testid", fname]]
-            field_data = field_data.rename(columns={fname: algo_name})
-            # print("field data\n", field_data)
-
-            if field_data_merged is None:
-                field_data_merged = field_data
-            else:
-                field_data_merged = pd.merge(field_data_merged, field_data,
-                                             on=["sequence", "testid"], how="outer")
-
-        # print("merged field data\n", field_data_merged)
-        filename = op.join(save_path, "rpe_{}.csv".format(fname))
-        print("save", op.basename(filename))
-        field_data_merged.to_csv(filename, encoding="utf-8", float_format="%1.6f")
-
-
 def main():
     np.set_printoptions(precision=5, suppress=True)
     evaluate_rpe_all("euroc_mav")
+    evaluate_rpe_all("tum_vi")
 
 
 if __name__ == "__main__":
