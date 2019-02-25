@@ -35,7 +35,7 @@ catkin_init_ws_and_build() {
 		echo "remove devel $3"
 		sleep 3
 	fi
-	rm -rf install logs .catkin_tools || true
+	rm -rf build logs .catkin_tools || true
 	catkin init
 	catkin config --merge-devel # Necessary for catkin_tools >= 0.4.
 	catkin config --extend /opt/ros/kinetic
