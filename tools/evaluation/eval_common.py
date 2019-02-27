@@ -9,6 +9,7 @@ import settings
 ALGORITHMS = ["rovioli_mvio", "orb2_vo_stereo",
               "vinsfs_mvio", "vinsfs_svio", "vinsfs_stereo",
               "svo2_mvio", "svo2_svio", "svo2_stereo"]
+MAX_TIME_DIFF = 0.5
 
 
 def clear_files(tgtpath):
@@ -26,16 +27,24 @@ def list_sequences(gtruth_path):
     return seq_abbr
 
 
+def check_tracking_time(traj_gt, traj_est):
+    gt_times = np.sort(np.array(list(traj_gt.keys())))
+    est_times = np.sort(np.array(list(traj_est.keys())))
+    gt_total = gt_times[-1] - gt_times[0]
+    est_total = accumulate_connected_time(est_times, max_diff=MAX_TIME_DIFF)
+    return est_total / gt_total
+
+
 def save_results(total_results, total_errors, save_path):
     for algo_name, result in total_results.items():
         filename = op.join(save_path, "summary_{}.csv".format(algo_name))
         print("save", op.basename(filename))
         result.to_csv(filename, encoding="utf-8", float_format="%1.6f")
 
-    for algo_name, result in total_errors.items():
-        filename = op.join(save_path, "rawerr_{}.txt".format(algo_name))
-        print("save", op.basename(filename))
-        np.savetxt(filename, result, fmt="%1.6f")
+    # for algo_name, result in total_errors.items():
+    #     filename = op.join(save_path, "rawerr_{}.txt".format(algo_name))
+    #     print("save", op.basename(filename))
+    #     np.savetxt(filename, result, fmt="%1.6f")
 
 
 def collect_fields_and_save(statis_results, fields, save_path):

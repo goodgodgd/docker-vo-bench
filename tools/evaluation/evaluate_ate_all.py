@@ -8,6 +8,7 @@ import settings
 from define_paths import *
 import evaluation.evaluate_ate as ate
 import evaluation.eval_common as ec
+import evaluation.associate as assoc
 
 NUM_TEST = 2
 MAX_TIME_DIFF = 0.5
@@ -15,21 +16,28 @@ MAX_TIME_DIFF = 0.5
 
 def evaluate_ate_all(dataset):
     estim_path = op.join(OUTPUT_PATH, "pose", dataset)
-    gtruth_path = op.join(OUTPUT_PATH, "ground_truth", dataset + "_body")
+    gtbody_path = op.join(OUTPUT_PATH, "ground_truth", dataset + "_body")
+    gtcam_path = op.join(OUTPUT_PATH, "ground_truth", dataset + "_camera")
     result_path = op.join(OUTPUT_PATH, "eval_result", "ate", dataset)
     assert op.isdir(estim_path), "No pose output directory: " + estim_path
-    assert op.isdir(gtruth_path), "No ground truth directory: " + gtruth_path
+    assert op.isdir(gtbody_path), "No ground truth directory: " + gtbody_path
+    assert op.isdir(gtcam_path), "No ground truth directory: " + gtcam_path
     os.makedirs(result_path, exist_ok=True)
     ec.clear_files(result_path)
 
-    sequences = ec.list_sequences(gtruth_path)
+    sequences = ec.list_sequences(gtbody_path)
 
     statis_results = {}
     rawerr_results = {}
     for algo_name in ec.ALGORITHMS:
         stat_result = []
         raw_result = []
-        print("\n===== algorithm: {} =====".format(algo_name))
+        print("\n===== dataset: {}, algorithm: {} =====".format(dataset, algo_name))
+        if "orb" in algo_name.lower() or "svo" in algo_name.lower():
+            gtruth_path = gtcam_path
+            print("Use camera pose")
+        else:
+            gtruth_path = gtbody_path
 
         for seq_name in sequences:
             for test_id in range(NUM_TEST):
@@ -38,12 +46,21 @@ def evaluate_ate_all(dataset):
                 estim_file = op.join(estim_path, estim_file)
                 if not op.isfile(estim_file):
                     continue
+                print("sequence: {}, testid: {}".format(seq_name, test_id))
+                traj_gt = assoc.read_file_list(gtruth_file)
+                traj_est = assoc.read_file_list(estim_file)
+                traj_est = remove_zero_frames(traj_est)
+                track_ratio = ec.check_tracking_time(traj_gt, traj_est)
+                if track_ratio < 0.5:
+                    print("tracking time ratio is < 0.5, abandon this result")
+                    continue
 
                 # main function
                 tran_errs, association, gt_tstamps = \
-                    compute_ate(gtruth_file, estim_file, result_path)
+                    compute_ate(traj_gt, traj_est, estim_file, result_path)
 
                 stats = calc_statistics(tran_errs, association, gt_tstamps)
+
                 seq_result = [seq_name, test_id, *stats]
                 stat_result.append(seq_result)
                 raw_result.append(tran_errs)
@@ -60,6 +77,30 @@ def evaluate_ate_all(dataset):
     ec.collect_fields_and_save(statis_results, ["te_mean", "track_ratio"], result_path)
 
 
+def remove_zero_frames(traj_est):
+    timestamps = list(traj_est.keys())
+    timestamps.sort()
+
+    # remove default poses
+    for time in timestamps:
+        pose = np.array(traj_est[time], dtype=np.float64)
+        posit_sq = np.linalg.norm(pose[:3])
+        if posit_sq < 1.0E-9:
+            del traj_est[time]
+
+    # remove stopping poses
+    for time, time_bef in zip(timestamps[1:], timestamps[:-1]):
+        if time in traj_est.keys() and time_bef in traj_est.keys():
+            pose = np.array(traj_est[time], dtype=np.float64)
+            pose_bef = np.array(traj_est[time_bef], dtype=np.float64)
+            posit_diff = (pose[:3] - pose_bef[:3]).T
+            move = np.linalg.norm(posit_diff)
+            if move < 1.0E-9:
+                del traj_est[time]
+
+    return traj_est
+
+
 def calc_statistics(tran_errs, association, gt_tstamps):
     # table_columns = ["sequence", "testid",
     #                  "te_mean", "te_std", "te_min", "te_max", "te_med",
@@ -68,19 +109,18 @@ def calc_statistics(tran_errs, association, gt_tstamps):
     stats = [np.mean(te), np.std(te), np.min(te), np.max(te), np.median(te)]
 
     total_seconds = ec.accumulate_connected_time(gt_tstamps, max_diff=MAX_TIME_DIFF)
-    track_seconds = ec.accumulate_connected_time(association[:, 3], max_diff=MAX_TIME_DIFF)
+    track_seconds = ec.accumulate_connected_time(association[:, 4], max_diff=MAX_TIME_DIFF)
     track_ratio = track_seconds / total_seconds
     stats.extend([total_seconds, track_seconds, track_ratio])
     return stats
 
 
-def compute_ate(gtruth_file, estim_file, result_path):
+def compute_ate(traj_gt, traj_est, estim_file, result_path):
     asso_name = op.join(result_path, "asso_" + op.basename(estim_file))
     plot_name = op.join(result_path, "plot_" + op.basename(estim_file).replace(".txt", ".png"))
     align_rot, align_trn, trjerr, association, gt_tstamps = \
-        ate.evaluate_ate(gtruth_file, estim_file, save_associations=asso_name, plot=plot_name)
-    print("sequnce: {}, \nalign rotation\n{} \nalign translation: {}".
-          format(op.basename(estim_file), align_rot, align_trn.T))
+        ate.evaluate_ate(traj_gt, traj_est, save_associations=asso_name, plot=plot_name)
+    print("align transformation: {}".format(np.concatenate([align_rot, align_trn], axis=1)))
     return trjerr, association, gt_tstamps
 
 

@@ -10,7 +10,6 @@ import evaluation.evaluate_rpe as rpe
 import evaluation.eval_common as ec
 
 NUM_TEST = 2
-MAX_TIME_DIFF = 0.5
 
 
 def test_func(traj_gt, traj_est):
@@ -56,9 +55,10 @@ def evaluate_rpe_all(dataset):
     for algo_name in ec.ALGORITHMS:
         stat_result = []
         raw_result = []
-        print("\n===== algorithm: {} =====".format(algo_name))
-        if "ORB" in algo_name:
+        print("\n===== dataset: {}, algorithm: {} =====".format(dataset, algo_name))
+        if "orb" in algo_name.lower() or "svo" in algo_name.lower():
             gtruth_path = gtcam_path
+            print("Use camera pose")
         else:
             gtruth_path = gtbody_path
 
@@ -73,9 +73,11 @@ def evaluate_rpe_all(dataset):
                 print("gt, est file:", op.basename(gtruth_file), op.basename(estim_file))
                 traj_gt = rpe.read_trajectory(gtruth_file)
                 traj_est = rpe.read_trajectory(estim_file)
-                # for time, pose in traj_est.items():
-                #     traj_est[time] = np.linalg.inv(pose)
                 traj_est = remove_zero_frames(traj_est)
+                track_ratio = ec.check_tracking_time(traj_gt, traj_est)
+                if track_ratio < 0.5:
+                    print("tracking time ratio is < 0.5, abandon this result")
+                    continue
 
                 # test_func(traj_gt, traj_est)
 

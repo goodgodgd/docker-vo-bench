@@ -19,6 +19,7 @@ def create_gt_poses(srcpath, dstpath, dataset, frame, data_reader):
     print("===== create gtposes to", result_path, "frame:", frame)
 
     for seq_path in seq_paths:
+        print("read sequence:", seq_path)
         data, cam2body = data_reader(seq_path, frame)
         seq_abbr = sa.sequence_abbrev(dataset, op.basename(seq_path))
         savefile = op.join(result_path, seq_abbr + ".csv")
@@ -52,8 +53,7 @@ def read_euroc(seq_path, frame):
         camf = open(op.join(seq_path, "mav0/cam0/sensor.yaml"))
         cam_param = yaml.load(camf)
         cam2body = np.array(cam_param['T_BS']['data']).reshape((4, 4))
-
-    print("camera pose to body\n", cam2body)
+        print("camera pose to body\n", cam2body)
     return data, cam2body
 
 
@@ -69,8 +69,10 @@ def read_tumvi(seq_path, frame):
         camf = open(op.join(seq_path, "dso/camchain.yaml"))
         cam_param = yaml.load(camf)
         cam2body = np.array(cam_param['cam0']['T_cam_imu']).reshape((4, 4))
-
-    print("camera pose to body\n", cam2body)
+        # tumvi's extrinsic means IMU frame w.t.t camera
+        # but we need camera frame w.r.t IMU
+        cam2body = np.linalg.inv(cam2body)
+        print("camera pose to body\n", cam2body)
     return data, cam2body
 
 

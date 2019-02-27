@@ -227,13 +227,8 @@ def remove_zero_frames(traj_est):
     return traj_est
 
 
-def evaluate_ate(first_file, second_file, offset=0.0, scale=1.0, max_difference=0.02,
+def evaluate_ate(first_list, second_list, offset=0.0, scale=1.0, max_difference=0.02,
                  save=None, save_associations=None, plot=None, plot3D=None, verbose=False):
-
-    first_list = associate.read_file_list(first_file)
-    second_list = associate.read_file_list(second_file)
-
-    second_list = remove_zero_frames(second_list)
 
     matches = associate.associate(first_list, second_list, float(offset),
                                   float(max_difference))
@@ -263,10 +258,10 @@ def evaluate_ate(first_file, second_file, offset=0.0, scale=1.0, max_difference=
          second_stamps]).transpose()
     second_xyz_full_aligned = rot * second_xyz_full + trans
 
-    association = [[a, x1, y1, z1, b, x2, y2, z2]
-                   for (a, b), (x1, y1, z1), (x2, y2, z2) in
-                   zip(matches, first_xyz.transpose().A,
-                       second_xyz_aligned.transpose().A)]
+    association = numpy.array([[a, x1, y1, z1, b, x2, y2, z2]
+                               for (a, b), (x1, y1, z1), (x2, y2, z2) in
+                               zip(matches, first_xyz.transpose().A,
+                                   second_xyz_aligned.transpose().A)])
     gt_tstamps = numpy.array(list(first_list.keys()))
 
     if verbose:
@@ -280,12 +275,12 @@ def evaluate_ate(first_file, second_file, offset=0.0, scale=1.0, max_difference=
         print("absolute_translational_error.min %f m" % numpy.min(trans_error))
         print("absolute_translational_error.max %f m" % numpy.max(trans_error))
     else:
-        print("%f" % numpy.sqrt(numpy.dot(trans_error, trans_error) / len(trans_error)))
+        print("absolute_translational_error.rmse: %f" %
+              numpy.sqrt(numpy.dot(trans_error, trans_error) / len(trans_error)))
 
     if save_associations:
-        file = open(save_associations, "w")
-        file.write("\n".join([" ".join(map(str, line)) for line in association]))
-        file.close()
+        print("save associations:", save_associations)
+        numpy.savetxt(save_associations, association, fmt="%1.5f")
 
     if save:
         file = open(save, "w")
@@ -303,6 +298,7 @@ def evaluate_ate(first_file, second_file, offset=0.0, scale=1.0, max_difference=
         plot3d(first_stamps, first_xyz, first_xyz_full,
                second_stamps, second_xyz_aligned, second_xyz_full_aligned,
                matches, plot3D)
+
 
     association = numpy.array(association, dtype=numpy.float64)
     return rot, trans, trans_error, association, gt_tstamps
@@ -324,6 +320,10 @@ if __name__ == "__main__":
     parser.add_argument('--plot3D', help='plot the first and the aligned second trajectory to as interactive 3D plot (format: png)', action = 'store_true')
     parser.add_argument('--verbose', help='print(all evaluation data (otherwise, only the RMSE absolute translational error in meters after alignment will be printed)', action='store_true')
     args = parser.parse_args()
-    evaluate_ate(args.first_file, args.second_file, args.offset, args.scale, 
+
+    first_list = associate.read_file_list(args.first_file)
+    second_list = associate.read_file_list(args.second_file)
+    second_list = remove_zero_frames(second_list)
+    evaluate_ate(first_list, second_list, args.offset, args.scale,
                  args.max_difference, args.save, args.save_associations,
                  args.plot, args.plot3D, args.verbose)
