@@ -203,30 +203,6 @@ def plot3d(first_stamps, first_xyz, first_xyz_full,
     plt.savefig(save_name, dpi=90)
 
 
-def remove_zero_frames(traj_est):
-    timestamps = list(traj_est.keys())
-    timestamps.sort()
-
-    # remove default poses
-    for time in timestamps:
-        pose = numpy.array(traj_est[time], dtype=numpy.float64)
-        posit_sq = numpy.linalg.norm(pose[:3])
-        if posit_sq < 1.0E-9:
-            del traj_est[time]
-
-    # remove stopping poses
-    for time, time_bef in zip(timestamps[1:], timestamps[:-1]):
-        if time in traj_est.keys() and time_bef in traj_est.keys():
-            pose = numpy.array(traj_est[time], dtype=numpy.float64)
-            pose_bef = numpy.array(traj_est[time_bef], dtype=numpy.float64)
-            posit_diff = (pose[:3] - pose_bef[:3]).T
-            move = numpy.linalg.norm(posit_diff)
-            if move < 1.0E-9:
-                del traj_est[time]
-
-    return traj_est
-
-
 def evaluate_ate(first_list, second_list, offset=0.0, scale=1.0, max_difference=0.02,
                  save=None, save_associations=None, plot=None, plot3D=None, verbose=False):
 
@@ -299,12 +275,11 @@ def evaluate_ate(first_list, second_list, offset=0.0, scale=1.0, max_difference=
                second_stamps, second_xyz_aligned, second_xyz_full_aligned,
                matches, plot3D)
 
-
     association = numpy.array(association, dtype=numpy.float64)
     return rot, trans, trans_error, association, gt_tstamps
 
 
-if __name__ == "__main__":
+def main():
     # parse command line
     parser = argparse.ArgumentParser(description='''
     This script computes the absolute trajectory error from the ground truth trajectory and the estimated trajectory. 
@@ -323,7 +298,10 @@ if __name__ == "__main__":
 
     first_list = associate.read_file_list(args.first_file)
     second_list = associate.read_file_list(args.second_file)
-    second_list = remove_zero_frames(second_list)
     evaluate_ate(first_list, second_list, args.offset, args.scale,
                  args.max_difference, args.save, args.save_associations,
                  args.plot, args.plot3D, args.verbose)
+
+
+if __name__ == "__main__":
+    main()

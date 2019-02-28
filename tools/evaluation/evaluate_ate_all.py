@@ -2,7 +2,6 @@ import os
 import os.path as op
 import numpy as np
 import pandas as pd
-import glob
 
 import settings
 from define_paths import *
@@ -15,17 +14,15 @@ MAX_TIME_DIFF = 0.5
 
 
 def evaluate_ate_all(dataset):
-    estim_path = op.join(OUTPUT_PATH, "pose", dataset)
-    gtbody_path = op.join(OUTPUT_PATH, "ground_truth", dataset + "_body")
-    gtcam_path = op.join(OUTPUT_PATH, "ground_truth", dataset + "_camera")
+    estim_path = op.join(OUTPUT_PATH, "pose_body", dataset)
+    gtruth_path = op.join(OUTPUT_PATH, "ground_truth", dataset)
     result_path = op.join(OUTPUT_PATH, "eval_result", "ate", dataset)
     assert op.isdir(estim_path), "No pose output directory: " + estim_path
-    assert op.isdir(gtbody_path), "No ground truth directory: " + gtbody_path
-    assert op.isdir(gtcam_path), "No ground truth directory: " + gtcam_path
+    assert op.isdir(gtruth_path), "No ground truth directory: " + gtruth_path
     os.makedirs(result_path, exist_ok=True)
     ec.clear_files(result_path)
 
-    sequences = ec.list_sequences(gtbody_path)
+    sequences = ec.list_sequences(gtruth_path)
 
     statis_results = {}
     rawerr_results = {}
@@ -33,11 +30,6 @@ def evaluate_ate_all(dataset):
         stat_result = []
         raw_result = []
         print("\n===== dataset: {}, algorithm: {} =====".format(dataset, algo_name))
-        if "orb" in algo_name.lower() or "svo" in algo_name.lower():
-            gtruth_path = gtcam_path
-            print("Use camera pose")
-        else:
-            gtruth_path = gtbody_path
 
         for seq_name in sequences:
             for test_id in range(NUM_TEST):

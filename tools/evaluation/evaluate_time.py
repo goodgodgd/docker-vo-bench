@@ -36,7 +36,7 @@ def evaluate_ate_all(dataset):
 
                 # main function
                 estim_pose = np.loadtxt(estim_file)
-                if estim_pose.shape[1] < 9:
+                if estim_pose.shape[1] != 9:
                     print("elapsed time was not recorded")
                     continue
                 
