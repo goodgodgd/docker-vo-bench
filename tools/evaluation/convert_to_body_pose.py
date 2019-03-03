@@ -28,8 +28,6 @@ def read_tumvi_pose_cam_body(dataset_path):
     # tumvi's extrinsic means IMU frame w.t.t camera
     # but we need camera frame w.r.t IMU
     cam2body = np.linalg.inv(cam2body)
-    # offset = np.array([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
-    # cam2body = np.dot(offset, cam2body)
     print("tumvi camera to body {}\n{}".format(np.linalg.det(cam2body[:3, :3]), cam2body))
     return cam2body
 
