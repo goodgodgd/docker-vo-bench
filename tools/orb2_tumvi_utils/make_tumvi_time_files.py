@@ -6,6 +6,8 @@ from define_paths import *
 
 
 def create_timestamp():
+    assert op.isdir(ORB2_PATH)
+    assert op.isdir(TUMVI_PATH)
     sequences = os.listdir(TUMVI_PATH)
     for seq_name in sequences:
         print("seq_name:", seq_name)
