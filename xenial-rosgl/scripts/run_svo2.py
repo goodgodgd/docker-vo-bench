@@ -25,7 +25,7 @@ class RunSVO2:
 
     def generate_commands(self, opt):
         if opt.dataset == "all":
-            command_makers = [self.tum_vi, self.euroc_mav]
+            command_makers = [self.euroc_mav, self.tum_vi]
             commands = []
             configs = []
             for cmdmaker in command_makers:
@@ -66,7 +66,7 @@ class RunSVO2:
             time.sleep(10)
             subprocess.run(["rosbag", "play", bagfile],
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            time.sleep(10)
+            time.sleep(20)
             subprocess.run(["chmod", "-R", "a+rw", self.OUTPUT_ROOT])
             assert op.isfile(outfile), "===== ERROR: output file was NOT created: {}".format(outfile)
         subprocess.run(["pkill", "roscore"])
