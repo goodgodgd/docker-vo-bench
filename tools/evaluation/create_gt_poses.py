@@ -56,7 +56,6 @@ def read_tumvi(seq_path):
     # rename columns
     new_names = ["#timestamp", "x", "y", "z", "qx", "qy", "qz", "qw"]
     renamer = dict(zip(list(data), new_names))
-    print("renamer", list(data))
     data = data.rename(columns=renamer)
     return data
 

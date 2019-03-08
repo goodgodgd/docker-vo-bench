@@ -9,7 +9,7 @@ import evaluation.evaluate_ate as ate
 import evaluation.eval_common as ec
 import evaluation.associate as assoc
 
-NUM_TEST = 2
+NUM_TEST = 5
 MAX_TIME_DIFF = 0.5
 
 
@@ -21,6 +21,7 @@ def evaluate_ate_all(dataset):
     assert op.isdir(gtruth_path), "No ground truth directory: " + gtruth_path
     os.makedirs(result_path, exist_ok=True)
     ec.clear_files(result_path)
+    major_axes = "yz" if dataset.startswith("euroc") else "xy"
 
     sequences = ec.list_sequences(gtruth_path)
 
@@ -48,10 +49,10 @@ def evaluate_ate_all(dataset):
                     continue
 
                 # main function
-                tran_errs, association, gt_tstamps = \
-                    compute_ate(traj_gt, traj_est, estim_file, result_path)
+                tran_errs, association = compute_ate(traj_gt, traj_est, estim_file,
+                                                     result_path, major_axes)
 
-                stats = calc_statistics(tran_errs, association, gt_tstamps)
+                stats = calc_statistics(tran_errs, association, list(traj_gt.keys()))
 
                 seq_result = [seq_name, test_id, *stats]
                 stat_result.append(seq_result)
@@ -100,20 +101,22 @@ def calc_statistics(tran_errs, association, gt_tstamps):
     te = tran_errs
     stats = [np.mean(te), np.std(te), np.min(te), np.max(te), np.median(te)]
 
+    est_tstamps = association[:, 4]
     total_seconds = ec.accumulate_connected_time(gt_tstamps, max_diff=MAX_TIME_DIFF)
-    track_seconds = ec.accumulate_connected_time(association[:, 4], max_diff=MAX_TIME_DIFF)
+    track_seconds = ec.accumulate_connected_time(est_tstamps, max_diff=MAX_TIME_DIFF)
     track_ratio = track_seconds / total_seconds
     stats.extend([total_seconds, track_seconds, track_ratio])
     return stats
 
 
-def compute_ate(traj_gt, traj_est, estim_file, result_path):
+def compute_ate(traj_gt, traj_est, estim_file, result_path, major_axes):
     asso_name = op.join(result_path, "asso_" + op.basename(estim_file))
     plot_name = op.join(result_path, "plot_" + op.basename(estim_file).replace(".txt", ".png"))
-    align_rot, align_trn, trjerr, association, gt_tstamps = \
-        ate.evaluate_ate(traj_gt, traj_est, save_associations=asso_name, plot=plot_name)
+    align_rot, align_trn, trjerr, association = \
+        ate.evaluate_ate(traj_gt, traj_est, save_associations=asso_name,
+                         plot=plot_name, major_axes=major_axes, plot_3d=None)
     print("align transformation: {}".format(np.concatenate([align_rot, align_trn], axis=1)))
-    return trjerr, association, gt_tstamps
+    return trjerr, association
 
 
 def get_column_names():
