@@ -103,6 +103,7 @@ def calc_statistics(tran_errs, association, gt_tstamps):
     #                  "total_seconds", "track_seconds", "track_ratio"]
     te = tran_errs
     stats = [np.mean(te), np.std(te), np.min(te), np.max(te), np.median(te)]
+    assert np.mean(te) < 101, "translational error {}".format(np.mean(te))
 
     est_tstamps = association[:, 4]
     total_seconds = ec.accumulate_connected_time(gt_tstamps, max_diff=MAX_TIME_DIFF)

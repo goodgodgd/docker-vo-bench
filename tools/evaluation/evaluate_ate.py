@@ -75,9 +75,8 @@ def evaluate_ate(first_timetraj, second_timetraj, offset=0.0, max_difference=0.0
     rot, trans, trans_error, first_xyz_sync, second_xyz_sync \
         = align_99_percent(first_xyz_sync, second_xyz_sync, 0.01)
     if np.mean(trans_error) > 100.0:
-        print("error is too large", np.mean(trans_error))
+        print("error is too large:", np.mean(trans_error))
         raise ValueError()
-
 
     first_xyz_sync, second_xyz_sync = reduce_matches(first_xyz_sync, second_xyz_sync)
     second_txyz[1:, :] = rot * second_txyz[1:, :] + trans

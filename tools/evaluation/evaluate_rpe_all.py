@@ -47,7 +47,11 @@ def evaluate_rpe_all(dataset):
                     continue
 
                 # main function
-                rpe_result = compute_rpe(traj_gt, traj_est, 10)
+                try:
+                    rpe_result = compute_rpe(traj_gt, traj_est, 10)
+                except ValueError:
+                    print("skip this sequence")
+                    continue
 
                 stats = calc_statistics(rpe_result, list(traj_gt.keys()))
                 seq_result = [seq_name, test_id, *stats]
@@ -75,6 +79,9 @@ def compute_rpe(traj_gt, traj_est, time_delta):
                                          param_scale=1.00)
     rpe_result = np.array(rpe_result)
     rpe_result = remove_1percent(rpe_result, 4)
+    if np.mean(rpe_result[:, 4]) > 100:
+        print("translational error is too large", np.mean(rpe_result[:, 4]))
+        raise ValueError()
 
     columns = ["time_est_0", "time_est_1", "time_gt_0", "time_gt_1", "te", "re"]
     rpe_result = pd.DataFrame(data=rpe_result, columns=columns)
