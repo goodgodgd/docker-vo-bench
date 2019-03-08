@@ -36,6 +36,24 @@ def transform44(l):
         ), dtype=np.float64)
 
 
+def rotation33(q):
+    nq = np.dot(q, q)
+    assert (nq-1) < 1.0E-3, "non unit quaternion: {} {}".format(q, nq)
+    q *= np.sqrt(1.0 / nq)
+    q = np.outer(q, q) * 2.0
+    return np.matrix(((1.0-q[1, 1]-q[2, 2],     q[0, 1]-q[2, 3],     q[0, 2]+q[1, 3]),
+                      (    q[0, 1]+q[2, 3], 1.0-q[0, 0]-q[2, 2],     q[1, 2]-q[0, 3]),
+                      (    q[0, 2]-q[1, 3],     q[1, 2]+q[0, 3], 1.0-q[0, 0]-q[1, 1])
+                      ), dtype=np.float64)
+
+
+def angle_axis_from_mat(rot):
+    axis = np.array([rot[2, 1] - rot[1, 2], rot[0, 2] - rot[2, 0], rot[1, 0] - rot[0, 1]])
+    axis /= np.linalg.norm(axis)
+    angle = np.arccos((np.trace(rot) - 1.0)/2.0)
+    return angle, axis
+
+
 def pose_quat(T, timestamp):
     quat = Quaternion(matrix=T[:3, :3])
     assert np.allclose(quat.rotation_matrix, T[:3, :3])

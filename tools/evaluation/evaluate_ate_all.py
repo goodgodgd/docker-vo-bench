@@ -49,14 +49,17 @@ def evaluate_ate_all(dataset):
                     continue
 
                 # main function
-                tran_errs, association = compute_ate(traj_gt, traj_est, estim_file,
-                                                     result_path, major_axes)
+                try:
+                    tran_errs, association = compute_ate(traj_gt, traj_est, estim_file,
+                                                         result_path, major_axes)
 
-                stats = calc_statistics(tran_errs, association, list(traj_gt.keys()))
+                    stats = calc_statistics(tran_errs, association, list(traj_gt.keys()))
 
-                seq_result = [seq_name, test_id, *stats]
-                stat_result.append(seq_result)
-                raw_result.append(tran_errs)
+                    seq_result = [seq_name, test_id, *stats]
+                    stat_result.append(seq_result)
+                    raw_result.append(tran_errs)
+                except ValueError:
+                    print("something went wrong, result of this sequence is not saved")
 
         if stat_result:
             statis_results[algo_name] = pd.DataFrame(data=stat_result,
@@ -115,7 +118,7 @@ def compute_ate(traj_gt, traj_est, estim_file, result_path, major_axes):
     align_rot, align_trn, trjerr, association = \
         ate.evaluate_ate(traj_gt, traj_est, save_associations=asso_name,
                          plot=plot_name, major_axes=major_axes, plot_3d=None)
-    print("align transformation: {}".format(np.concatenate([align_rot, align_trn], axis=1)))
+    print("aligning transformation: \n{}".format(np.concatenate([align_rot, align_trn], axis=1)))
     return trjerr, association
 
 

@@ -9,7 +9,7 @@ from define_paths import *
 import evaluation.evaluate_rpe as rpe
 import evaluation.eval_common as ec
 
-NUM_TEST = 2
+NUM_TEST = 5
 
 
 def evaluate_rpe_all(dataset):
@@ -57,7 +57,7 @@ def evaluate_rpe_all(dataset):
         if stat_result:
             statis_results[algo_name] = pd.DataFrame(data=stat_result, columns=get_column_names())
             printcols = ["sequence", "testid", "te_mean", "re_mean", "track_seconds"]
-            print(statis_results[algo_name].loc[:, printcols])
+            print(algo_name + "\n", statis_results[algo_name].loc[:, printcols])
             rawerr_results[algo_name] = np.concatenate(raw_result, axis=0)
             print("raw errors shape:", rawerr_results[algo_name].shape)
 
@@ -74,9 +74,19 @@ def compute_rpe(traj_gt, traj_est, time_delta):
                                          param_offset=0.00,
                                          param_scale=1.00)
     rpe_result = np.array(rpe_result)
+    rpe_result = remove_1percent(rpe_result, 4)
+
     columns = ["time_est_0", "time_est_1", "time_gt_0", "time_gt_1", "te", "re"]
     rpe_result = pd.DataFrame(data=rpe_result, columns=columns)
     return rpe_result
+
+
+def remove_1percent(rpe, column: int):
+    error_sorted = np.sort(rpe[:, column], axis=None)
+    length = len(error_sorted)
+    thresh = error_sorted[int((length-1) * 0.99)]
+    rpe = rpe[rpe[:, column] < thresh, :]
+    return rpe
 
 
 def calc_statistics(rpe_result, gt_times):

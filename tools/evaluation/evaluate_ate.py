@@ -45,6 +45,7 @@ import numpy as np
 import argparse
 import associate
 import matplotlib.backends.backend_qt5agg
+import evaluation.eval_common as ec
 
 
 def evaluate_ate(first_timetraj, second_timetraj, offset=0.0, max_difference=0.02,
@@ -57,23 +58,37 @@ def evaluate_ate(first_timetraj, second_timetraj, offset=0.0, max_difference=0.0
     """
 
     matches = associate.associate(first_timetraj, second_timetraj, offset, max_difference)
+    matches = np.array(matches)
     if len(matches) < 2:
         sys.exit("Couldn't find matching timestamp pairs between groundtruth and "
                  "estimated trajectory! Did you choose the correct sequence?")
 
-    # txyz: 4xn matrix = rows of timestamp, x, y, z
-    first_txyz, first_xyz_match = extract_trajmatrix(first_timetraj, [a for a, b in matches], major_axes)
-    second_txyz, second_xyz_match = extract_trajmatrix(second_timetraj, [b for a, b in matches], major_axes)
-    print("data shapes", first_txyz.shape, first_xyz_match.shape, second_txyz.shape, second_xyz_match.shape)
+    tr_ratio = track_ratio(first_timetraj, matches)
+    if tr_ratio < 0.5:
+        print("matched trajectory is too short", tr_ratio)
+        raise ValueError()
 
-    rot, trans, trans_error = align(second_xyz_match, first_xyz_match)
+    # txyz: 4xn matrix = rows of timestamp, x, y, z
+    first_txyz, first_xyz_sync = extract_trajmatrix(first_timetraj, matches[:, 0], major_axes)
+    second_txyz, second_xyz_sync = extract_trajmatrix(second_timetraj, matches[:, 1], major_axes)
+
+    rot, trans, trans_error, first_xyz_sync, second_xyz_sync \
+        = align_99_percent(first_xyz_sync, second_xyz_sync, 0.01)
+    if np.mean(trans_error) > 100.0:
+        print("error is too large", np.mean(trans_error))
+        raise ValueError()
+
+
+    first_xyz_sync, second_xyz_sync = reduce_matches(first_xyz_sync, second_xyz_sync)
     second_txyz[1:, :] = rot * second_txyz[1:, :] + trans
-    second_xyz_match = rot * second_xyz_match + trans
+    second_xyz_sync = rot * second_xyz_sync + trans
 
     association = np.array([[a, x1, y1, z1, b, x2, y2, z2]
                             for (a, b), (x1, y1, z1), (x2, y2, z2) in
-                            zip(matches, first_xyz_match.transpose().A,
-                                second_xyz_match.transpose().A)])
+                            zip(matches, first_xyz_sync.transpose().A,
+                                second_xyz_sync.transpose().A)])
+    print("data shapes", first_txyz.shape, first_xyz_sync.shape,
+          second_txyz.shape, second_xyz_sync.shape, association.shape)
 
     print_stats(trans_error, verbose)
 
@@ -82,13 +97,25 @@ def evaluate_ate(first_timetraj, second_timetraj, offset=0.0, max_difference=0.0
         np.savetxt(save_associations, association, fmt="%1.5f")
 
     if plot:
-        plot2d(first_txyz, first_xyz_match, second_txyz, second_xyz_match, plot)
+        plot2d(first_txyz, first_xyz_sync, second_txyz, second_xyz_sync, plot)
 
     if plot_3d:
-        plot3d(first_txyz, first_xyz_match, second_txyz, second_xyz_match, plot)
+        plot3d(first_txyz, first_xyz_sync, second_txyz, second_xyz_sync, plot)
 
     association = np.array(association, dtype=np.float64)
     return rot, trans, trans_error, association
+
+
+def track_ratio(gt_timetraj, matches):
+    if len(matches) < 100:
+        return True
+    gt_timestamps = list(gt_timetraj.keys())
+    gt_timestamps.sort()
+    gt_timestamps = np.array(gt_timestamps)
+    est_timestamps = matches[:, 1]
+    total_time = ec.accumulate_connected_time(gt_timestamps, 1)
+    track_time = ec.accumulate_connected_time(est_timestamps, 1)
+    return track_time / total_time
 
 
 def extract_trajmatrix(traj, match_times, major_axes):
@@ -104,6 +131,29 @@ def extract_trajmatrix(traj, match_times, major_axes):
         txyz = np.vstack([txyz[0, :], txyz[2, :], txyz[3, :], txyz[1, :]])
         xyz_match = np.vstack([xyz_match[1, :], xyz_match[2, :], xyz_match[0, :]])
     return txyz, xyz_match
+
+
+def align_99_percent(first_xyz_sync, second_xyz_sync, outlier_ratio=0.01):
+    """
+    To remove effect of outliers, align two trajectories in two steps
+    :param first_xyz_sync: time synced first trajectory
+    :param second_xyz_sync: time synced second trajectory
+    :return: aligning rotation, translation, and trajectory error
+    """
+    traj_len = first_xyz_sync.shape[1]
+    rot, trans, trans_error = align(second_xyz_sync, first_xyz_sync)
+
+    # filter out 1% error
+    sorted_error = np.sort(trans_error, axis=None)
+    thresh = sorted_error[int((traj_len - 1)*(1 - outlier_ratio))]
+    mask = (trans_error < thresh)
+    first_xyz_sync = first_xyz_sync[:, mask]
+    second_xyz_sync = second_xyz_sync[:, mask]
+    print("align 99%", first_xyz_sync.shape, mask.shape)
+
+    # align again with filtered trajectory
+    rot, trans, trans_error = align(second_xyz_sync, first_xyz_sync)
+    return rot, trans, trans_error, first_xyz_sync, second_xyz_sync
 
 
 def align(model, data):
@@ -133,7 +183,7 @@ def align(model, data):
         S[2, 2] = -1
 
     rot = U*S*Vh
-    trans = model.mean(1) - rot * data.mean(1)
+    trans = data.mean(1) - rot * model.mean(1)
     model_aligned = rot * model + trans
     alignment_error = model_aligned - data
     trans_error = np.sqrt(np.sum(np.multiply(alignment_error, alignment_error), 0)).A[0]
@@ -141,7 +191,29 @@ def align(model, data):
     return rot, trans, trans_error
 
 
-def plot2d(first_txyz, first_xyz_match, second_txyz, second_xyz_match, save_name):
+def reduce_matches(first_xyz, second_xyz):
+    diff = first_xyz[:, 1:] - first_xyz[:, :-1]
+    diff = np.sqrt(np.sum(diff.A * diff.A, axis=0))
+    spsize = np.max([first_xyz.max(1) - first_xyz.min(1)])
+    thresh = spsize / 50
+    first_xyz_out = [first_xyz[:, 0]]
+    second_xyz_out = [second_xyz[:, 0]]
+
+    movedist = 0
+    for i, diff in enumerate(diff):
+        movedist += diff
+        if movedist > thresh:
+            first_xyz_out.append(first_xyz[:, i])
+            second_xyz_out.append(second_xyz[:, i])
+            movedist = 0
+
+    first_xyz_out = np.hstack(first_xyz_out)
+    second_xyz_out = np.hstack(second_xyz_out)
+    print("reduce", spsize, thresh, type(first_xyz_out), first_xyz.shape, first_xyz_out.shape)
+    return first_xyz_out, second_xyz_out
+
+
+def plot2d(first_txyz, first_xyz_sync, second_txyz, second_xyz_sync, save_name):
     """
     Plot a trajectory using matplotlib.
 
@@ -165,8 +237,8 @@ def plot2d(first_txyz, first_xyz_match, second_txyz, second_xyz_match, save_name
     plot_traj(ax, second_txyz, False, '-', "blue", algorithm)
 
     label = "difference"
-    first_match = first_xyz_match[:, 0:-1:3]
-    second_match = second_xyz_match[:, 0:-1:3]
+    first_match = first_xyz_sync[:, 0:-1:3]
+    second_match = second_xyz_sync[:, 0:-1:3]
     for (x1, y1, z1), (x2, y2, z2) in zip(first_match.transpose().A, second_match.transpose().A):
         ax.plot([x1, x2], [y1, y2], '-', color="red", label=label)
         label = ""
@@ -178,7 +250,7 @@ def plot2d(first_txyz, first_xyz_match, second_txyz, second_xyz_match, save_name
     plt.savefig(save_name, dpi=90)
 
 
-def plot3d(first_txyz, first_xyz_match, second_txyz, second_xyz_match, save_name):
+def plot3d(first_txyz, first_xyz_sync, second_txyz, second_xyz_sync, save_name):
     import matplotlib
     matplotlib.use('Qt5Agg')
     import matplotlib.pyplot as plt
@@ -192,8 +264,8 @@ def plot3d(first_txyz, first_xyz_match, second_txyz, second_xyz_match, save_name
     plot_traj(ax, second_txyz, True, '-', "blue", algorithm)
 
     label = "difference"
-    first_match = first_xyz_match[:, 0:-1:3]
-    second_match = second_xyz_match[:, 0:-1:3]
+    first_match = first_xyz_sync[:, 0:-1:3]
+    second_match = second_xyz_sync[:, 0:-1:3]
     for (x1, y1, z1), (x2, y2, z2) in zip(first_match.transpose().A, second_match.transpose().A):
         ax.plot([x1, x2], [y1, y2], [z1, z2], '-', color="red", label=label)
         label = ""

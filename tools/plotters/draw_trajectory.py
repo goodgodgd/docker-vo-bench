@@ -39,7 +39,7 @@ def plot3d(ax, timestamp, traj_xyz):
     ax.set_ylabel('y [m]')
     ax.set_zlabel('z [m]')
     plt.pause(0.1)
-    plt.waitforbuttonpress(100)
+    plt.waitforbuttonpress(1)
     ax.clear()
 
 
