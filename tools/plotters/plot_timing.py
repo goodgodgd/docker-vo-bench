@@ -3,6 +3,7 @@ import os.path as op
 import numpy as np
 import pandas as pd
 import glob
+import copy
 import matplotlib.backends.backend_qt5agg
 import matplotlib
 matplotlib.use('Qt5Agg')
@@ -23,21 +24,44 @@ def boxplot_timings(dataset, save_path):
         sequence = "corridor1"
     else:
         return
-    test_id = 0
+
     raw_timings = {}
+    algorithms = copy.deepcopy(ec.ALGORITHMS)
+    algorithms.remove("rovioli_mvio")
 
-    for algo_name in ec.ALGORITHMS:
-        estim_file = "{}_{}_{}.txt".format(algo_name, sequence, test_id)
-        estim_file = op.join(estim_path, estim_file)
-        if not op.isfile(estim_file):
+    for algo_name in algorithms:
+        estim_pattern = "{}/{}_{}_*.txt".format(estim_path, algo_name, sequence)
+        estim_files = glob.glob(estim_pattern)
+        if not estim_files:
             continue
-        data = np.loadtxt(estim_file)
-        if data.shape[1] < 9:
-            continue
-        raw_timings[algo_name] = data[:, 8]
-        print("timing length", estim_file, raw_timings[algo_name].shape)
+        timings = []
+        for file in estim_files:
+            data = np.loadtxt(file)
+            if data.shape[1] < 9:
+                continue
+            timings.append(data[:, 8])
+        timings = np.concatenate(timings, 0)
+        inds = np.linspace(0, len(timings), 1000, endpoint=False).astype(int)
+        timings = timings[inds]
+        raw_timings[algo_name] = timings
+        print("timing length", estim_pattern, raw_timings[algo_name].shape)
 
-    # draw boxplot here
+    matplotlib.rcParams.update({'font.size': 8})
+    fig = plt.figure(num=0, figsize=(7, 3))
+    result = plt.boxplot(list(raw_timings.values()), labels=list(raw_timings.keys()), flierprops={"marker": '.'})
+    x1, x2, y1, y2 = plt.axis()
+    plt.axis([x1, x2, 0, 200])
+    print("result of boxplot", result["fliers"])
+    save_name = op.join(save_path, f"{dataset}_timing.png")
+    show_and_save(save_name)
+
+
+def show_and_save(savename):
+    plt.pause(0.1)
+    plt.savefig(savename, dpi=100)
+    print("savename:", savename)
+    plt.waitforbuttonpress()
+    plt.clf()
 
 
 def main():

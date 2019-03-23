@@ -27,7 +27,7 @@ class RunORB2:
 
     def generate_commands(self, opt):
         if opt.exec == "all":
-            command_makers = [self.stereo_tumvi, self.stereo_euroc, self.stereo_kitti]
+            command_makers = [self.stereo_tumvi, self.stereo_euroc]
             commands = []
             configs = []
             for lc in [0]:
