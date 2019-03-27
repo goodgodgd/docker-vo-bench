@@ -11,7 +11,7 @@ import evaluation.rotation as rotation
 def analyze_sequences(dataset):
     gtruth_path = op.join(OUTPUT_PATH, "ground_truth", dataset)
     sequences = ec.list_sequences(gtruth_path)
-    columns = ["name", "total_time", "gt_time", "max_tvel", "mean_tvel", "max_rvel", "mean_rvel",
+    columns = ["name", "total_time", "gt_time", "max tran", "mean tran", "max rota", "mean rota",
                "size_x", "size_y", "size_z"]
     seq_info = []
     result_path = op.join(OUTPUT_PATH, "eval_result", "seq_info")

@@ -46,6 +46,9 @@ def boxplot_timings(dataset, save_path):
         raw_timings[algo_name] = timings
         print("timing length", estim_pattern, raw_timings[algo_name].shape)
 
+    mean_time = {key: np.mean(value) for key, value in raw_timings.items()}
+    print(mean_time)
+
     matplotlib.rcParams.update({'font.size': 8})
     fig = plt.figure(num=0, figsize=(7, 3))
     result = plt.boxplot(list(raw_timings.values()), labels=list(raw_timings.keys()), flierprops={"marker": '.'})

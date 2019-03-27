@@ -13,7 +13,8 @@ import evaluation.eval_common as ec
 
 def plot_seq_info(dataset, figpath):
     data = read_seq_info(dataset)
-    create_figure(data)
+    speed_limit = 4 if dataset.startswith("euroc") else 5
+    create_figure(data, speed_limit)
     save_figure(figpath, dataset)
 
 
@@ -23,20 +24,20 @@ def read_seq_info(dataset):
     return data
 
 
-def create_figure(data):
+def create_figure(data, speed_limit):
     matplotlib.rcParams.update({'font.size': 8})
     figsize = (5, 3)
     fig = plt.figure(num=0, figsize=figsize)
     fig.set_size_inches(figsize[0], figsize[1], forward=True)
 
     ax1 = fig.add_subplot(11 * 10 + 1)
-    plot_velocities(ax1, data)
+    plot_velocities(ax1, data, speed_limit)
     ax2 = ax1.twinx()
     plot_time(ax2, data)
 
 
-def plot_velocities(ax, data):
-    columns = ["mean_tvel", "max_tvel", "mean_rvel", "max_rvel"]
+def plot_velocities(ax, data, speed_limit):
+    columns = ["max tran", "mean tran", "max rota", "mean rota"]
     styles = ['.', '+', 'x', '1', '-', ':', '--', '-.']
     colormap = matplotlib.cm.get_cmap('tab20', len(ec.ALGORITHMS))
     color = 'tab:red'
@@ -52,7 +53,7 @@ def plot_velocities(ax, data):
     ax.set_xlabel('sequences')
     ax.set_ylabel('v(m/s), w(rad/s)', color=color)
     x1, x2, y1, y2 = plt.axis()
-    plt.axis([x1, x2, 0, 5])
+    plt.axis([x1, x2, 0, speed_limit])
 
 
 def plot_time(ax, data):
