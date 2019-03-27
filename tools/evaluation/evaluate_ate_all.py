@@ -48,8 +48,7 @@ def evaluate_ate_all(dataset):
                     print("tracking time ratio is < 0.5, abandon this result")
                     continue
 
-                # main function
-                try:
+                try:    # throws error when track_ratio < 0.5
                     tran_errs, association = compute_ate(traj_gt, traj_est, estim_file,
                                                          result_path, major_axes)
 
