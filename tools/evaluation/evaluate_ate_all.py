@@ -132,7 +132,7 @@ def get_column_names():
 def main():
     np.set_printoptions(precision=5, suppress=True)
     evaluate_ate_all("euroc_mav")
-    evaluate_ate_all("tum_vi")
+    # evaluate_ate_all("tum_vi")
 
 
 if __name__ == "__main__":

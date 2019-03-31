@@ -47,7 +47,7 @@ class RunSVO2:
             print("start SVO2 in {} sec".format(3-i))
             time.sleep(1)
 
-        subprocess.Popen(["roscore"])
+        # subprocess.Popen(["roscore"])
         time.sleep(3)
         for ci, (cmd, cfg) in enumerate(zip(commands, configs)):
             bagfile = cmd[0]
@@ -69,7 +69,7 @@ class RunSVO2:
             time.sleep(20)
             subprocess.run(["chmod", "-R", "a+rw", self.OUTPUT_ROOT])
             assert op.isfile(outfile), "===== ERROR: output file was NOT created: {}".format(outfile)
-        subprocess.run(["pkill", "roscore"])
+        # subprocess.run(["pkill", "roscore"])
 
     def euroc_mav(self, seq_idx):
         dataset = "euroc_mav"
