@@ -21,7 +21,7 @@ def clear_files(tgtpath):
 
 def list_sequences(gtruth_path):
     gtfiles = glob.glob(gtruth_path + "/*")
-    seq_abbr = [abbr.split("/")[-1][:-4] for abbr in gtfiles]
+    seq_abbr = [op.basename(abbr)[:-4] for abbr in gtfiles]
     seq_abbr.sort()
     print("sequences:", seq_abbr)
     return seq_abbr

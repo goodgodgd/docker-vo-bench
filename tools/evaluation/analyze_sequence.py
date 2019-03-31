@@ -11,13 +11,13 @@ import evaluation.rotation as rotation
 def analyze_sequences(dataset):
     gtruth_path = op.join(OUTPUT_PATH, "ground_truth", dataset)
     sequences = ec.list_sequences(gtruth_path)
-    columns = ["name", "total_time", "gt_time", "max_tvel", "med_tvel", "max_rvel", "med_rvel",
+    columns = ["name", "total_time", "gt_time", "max tran", "mean tran", "max rota", "mean rota",
                "size_x", "size_y", "size_z"]
     seq_info = []
     result_path = op.join(OUTPUT_PATH, "eval_result", "seq_info")
 
     for seq_name in sequences:
-        print("sequence:", seq_name)
+        print("sequence name:", seq_name)
         gtruth_file = op.join(gtruth_path, seq_name + ".csv")
         trajectory = pd.read_csv(gtruth_file)
         trajectory = trajectory.values
@@ -32,9 +32,9 @@ def analyze_sequences(dataset):
         rot_vel = rotation_velocity(timestamp, traj_quat, mean_time, frames)
 
         max_tvel = np.max(trn_vel)
-        med_tvel = np.median(trn_vel)
+        med_tvel = np.mean(trn_vel)
         max_rvel = np.max(rot_vel)
-        med_rvel = np.median(rot_vel)
+        med_rvel = np.mean(rot_vel)
         total_time = timestamp[-1] - timestamp[0]
         gt_time = ec.accumulate_connected_time(timestamp, max_diff=0.5)
 
