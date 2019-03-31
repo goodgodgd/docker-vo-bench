@@ -20,8 +20,10 @@ def boxplot_timings(dataset, save_path):
 
     if dataset.startswith("euroc"):
         sequence = "MH01"
+        ylimit = 200
     elif dataset.startswith("tum"):
         sequence = "corridor1"
+        ylimit = 500
     else:
         return
 
@@ -49,11 +51,12 @@ def boxplot_timings(dataset, save_path):
     mean_time = {key: np.mean(value) for key, value in raw_timings.items()}
     print(mean_time)
 
-    matplotlib.rcParams.update({'font.size': 8})
-    fig = plt.figure(num=0, figsize=(7, 3))
+    matplotlib.rcParams.update({'font.size': 9})
+    fig = plt.figure(num=0, figsize=(len(raw_timings)+1, 3))
+    fig.set_size_inches(len(raw_timings)+1, 3, forward=True)
     result = plt.boxplot(list(raw_timings.values()), labels=list(raw_timings.keys()), flierprops={"marker": '.'})
     x1, x2, y1, y2 = plt.axis()
-    plt.axis([x1, x2, 0, 200])
+    plt.axis([x1, x2, 0, ylimit])
     print("result of boxplot", result["fliers"])
     save_name = op.join(save_path, f"{dataset}_timing.png")
     show_and_save(save_name)
