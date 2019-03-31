@@ -17,7 +17,7 @@ def evaluate_rpe_all(dataset):
     gtruth_path = op.join(OUTPUT_PATH, "ground_truth", dataset)
     result_path = op.join(OUTPUT_PATH, "eval_result", "rpe", dataset)
     assert op.isdir(estim_path), "No pose output directory: " + estim_path
-    assert op.isdir(gtruth_path), "No ground truth directory: " + gtbody_path
+    assert op.isdir(gtruth_path), "No ground truth directory: " + gtruth_path
     os.makedirs(result_path, exist_ok=True)
     ec.clear_files(result_path)
 
@@ -66,7 +66,7 @@ def evaluate_rpe_all(dataset):
             print("raw errors shape:", rawerr_results[algo_name].shape)
 
     ec.save_results(statis_results, rawerr_results, result_path)
-    ec.collect_fields_and_save(statis_results, ["te_mean", "re_mean", "track_ratio"], result_path)
+    ec.collect_fields_and_save(statis_results, ["te_mean", "re_mean", "te_max", "re_max", "track_ratio"], result_path)
 
 
 def compute_rpe(traj_gt, traj_est, time_delta):

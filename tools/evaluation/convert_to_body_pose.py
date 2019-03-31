@@ -7,6 +7,8 @@ import yaml
 import settings
 from define_paths import *
 import evaluation.rotation as rotation
+import evaluation.eval_common as ec
+import evaluation.associate as assoc
 
 
 def read_euroc_pose_cam_body(dataset_path):
@@ -33,8 +35,11 @@ def read_tumvi_pose_cam_body(dataset_path):
 
 
 def convert_to_body_pose(data_root, dataset, alg_prefix, cam2body=None, alg_offset=None):
+    gtruth_path = op.join(OUTPUT_PATH, "ground_truth", dataset)
     srcfiles = glob.glob(op.join(data_root, dataset, alg_prefix + "*"))
-    assert len(srcfiles) > 0, op.join(data_root, dataset, alg_prefix + "*")
+    if not srcfiles:
+        print("no file for", alg_prefix)
+        return
     tobody_pose = np.identity(4)
     if alg_offset is not None:
         tobody_pose = np.dot(tobody_pose, alg_offset)
@@ -43,13 +48,19 @@ def convert_to_body_pose(data_root, dataset, alg_prefix, cam2body=None, alg_offs
     print("\n===== dataset:", dataset, ", algorithm:", alg_prefix, "\noffset to body pose\n", tobody_pose)
 
     for srcfile in srcfiles:
+        seq_name = op.basename(srcfile).split("_")[-2]
+        gtruth_file = op.join(gtruth_path, seq_name + ".csv")
         poses = np.loadtxt(srcfile)
-        if poses.shape[0] < 500:
+
+        traj_gt = assoc.read_file_list(gtruth_file)
+        traj_est = assoc.read_file_list(srcfile)
+        track_ratio = ec.check_tracking_time(traj_gt, traj_est)
+        if track_ratio < 0.5:
+            print("tracking time ratio is < 0.5, abandon this result")
             continue
-        dstfile = srcfile.replace("/pose/", "/pose_body/")
 
         new_poses = convert_pose(poses, tobody_pose)
-
+        dstfile = srcfile.replace("/pose/", "/pose_body/")
         print("save to", dstfile)
         os.makedirs(op.dirname(dstfile), exist_ok=True)
         np.savetxt(dstfile, new_poses, fmt="%1.6f")

@@ -86,8 +86,7 @@ def evaluate_ate(first_timetraj, second_timetraj, offset=0.0, max_difference=0.0
                             for (a, b), (x1, y1, z1), (x2, y2, z2) in
                             zip(matches, first_xyz_sync.transpose().A,
                                 second_xyz_sync.transpose().A)])
-    print("data shapes", first_txyz.shape, first_xyz_sync.shape,
-          second_txyz.shape, second_xyz_sync.shape, association.shape)
+    print("raw and association shapes", first_txyz.shape, first_xyz_sync.shape)
 
     print_stats(trans_error, verbose)
 
@@ -148,7 +147,7 @@ def align_99_percent(first_xyz_sync, second_xyz_sync, outlier_ratio=0.01):
     mask = (trans_error < thresh)
     first_xyz_sync = first_xyz_sync[:, mask]
     second_xyz_sync = second_xyz_sync[:, mask]
-    print("align 99%", first_xyz_sync.shape, mask.shape)
+    print("align 99% shape change:", mask.shape, first_xyz_sync.shape)
 
     # align again with filtered trajectory
     rot, trans, trans_error = align(second_xyz_sync, first_xyz_sync)
@@ -208,7 +207,6 @@ def reduce_matches(first_xyz, second_xyz):
 
     first_xyz_out = np.hstack(first_xyz_out)
     second_xyz_out = np.hstack(second_xyz_out)
-    print("reduce", spsize, thresh, type(first_xyz_out), first_xyz.shape, first_xyz_out.shape)
     return first_xyz_out, second_xyz_out
 
 

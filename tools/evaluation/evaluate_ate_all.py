@@ -48,8 +48,7 @@ def evaluate_ate_all(dataset):
                     print("tracking time ratio is < 0.5, abandon this result")
                     continue
 
-                # main function
-                try:
+                try:    # throws error when track_ratio < 0.5
                     tran_errs, association = compute_ate(traj_gt, traj_est, estim_file,
                                                          result_path, major_axes)
 
@@ -132,7 +131,7 @@ def get_column_names():
 def main():
     np.set_printoptions(precision=5, suppress=True)
     evaluate_ate_all("euroc_mav")
-    evaluate_ate_all("tum_vi")
+    # evaluate_ate_all("tum_vi")
 
 
 if __name__ == "__main__":
