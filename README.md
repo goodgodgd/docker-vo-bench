@@ -130,8 +130,6 @@ docker start vo-bench
 docker exec -it vo-bench bash
 ```
 
-written upto here
-
 ---
 
 ## 3. Build Source Codes
@@ -200,7 +198,7 @@ python3 run_orb2.py -e all -t $NUM_TEST
 
 ## 6. Evaluate Results
 
-Once you executed `run_all.sh`, there would be hundreds of pose files in `$PROJECT/output/pose` where `PROJECT` was defined in `docker_run.sh`. Evaluation scripts are placed in `./tools`. There are five steps to evaluate the results.
+Once you executed `run_all.sh`, there would be hundreds of pose files in `$PROJECT/output/pose` where `PROJECT` was defined in `docker_run.sh`. Evaluation scripts are placed in `./tools`. There are four steps to evaluate the results.
 
 ### 6.1. Define paths
 
@@ -234,3 +232,4 @@ python3 ./plotters/plot_errors.py
 python3 ./plotters/plot_timings.py
 ```
 
+After executing the commands, the results will be in `./output/eval_results.` The result summary files are named like `collect_*.csv` in ATE and RPE. The resulting graphs are saved in `./output/eval_results/figures`
