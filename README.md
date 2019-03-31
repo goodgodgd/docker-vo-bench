@@ -153,7 +153,13 @@ Instead, you have to pull all submodules recursively.
 git submodule update --init --recursive
 ```
 
-The submodules are built by the following scripts **inside the docker container.**
+If you want to run SVO2 algorithm like our paper, go to [the project page](http://rpg.ifi.uzh.ch/svo2.html) and request library files. Receive the library in a zip file and unzip it. Then move the library folder to the new workspace folder like below.
+
+```bash
+mv svo_binaries_1604_kinetic/svo_install_ws/install/ /path/to/docker-vo-bench/xenial-rosgl/svo2_ws/
+```
+
+Then you can build SVO2 by the scripts below. All the submodules are built by the following scripts **inside the docker container.**
 
 ```bash
 cd /work/scripts
@@ -162,6 +168,8 @@ cd /work/scripts
 # build SVO2, MAPLAB, VINS-fusion
 ./catkin_from_scratch.sh
 ```
+
+Building by `catkin_from_scratch.sh` may fail because multiple packages are supposed to be built without order but there are dependencies between them. Some packages can be built after some other packages are built. The simple solution is running `./catkin_from_scratch.sh` multiple times so that base packages to be built first and dependent packages are built later.
 
 ## 4. Prepare Datasets
 
