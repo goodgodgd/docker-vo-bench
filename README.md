@@ -21,6 +21,10 @@ We provide a docker image to install dependencies in an isolated environment ind
 
 > Note: `.` will always mean the repository root dir.
 
+To check **the benchmark results**, you can refer the paper file: `./An Open-Source Benchmark for SAVO.pdf`
+
+
+
 ## 1. Build Docker Image
 
 If you have not installed docker, you have to install docker. ([Ubuntu install](https://docs.docker.com/v17.09/engine/installation/linux/docker-ce/ubuntu/), [Windows Install](https://docs.docker.com/v17.09/docker-for-windows/install/)). Here are shortcuts for ubunt installation.
