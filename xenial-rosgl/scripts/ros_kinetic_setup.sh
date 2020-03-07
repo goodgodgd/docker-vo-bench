@@ -26,13 +26,13 @@ if [ ! -e /etc/apt/sources.list.d/ros-latest.list ]; then
 fi
 
 echo "[Download the ROS keys]"
-roskey=`apt-key list | grep "ROS Builder"`
+roskey=`apt-key list | grep "Open Robotics"`
 if [ -z "$roskey" ]; then
-  apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116
+  apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654 
 fi
 
 echo "[Check the ROS keys]"
-roskey=`apt-key list | grep "ROS Builder"`
+roskey=`apt-key list | grep "Open Robotics"`
 if [ -n "$roskey" ]; then
   echo "[ROS key exists in the list]"
 else
